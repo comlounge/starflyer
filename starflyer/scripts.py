@@ -12,6 +12,7 @@ class WebsiteRunner(object):
         self.parser.add_argument('config_file', metavar='CONFIG', type=file, nargs=1,
                    help='the config file to read')
         self.parser.add_argument('-r', action="store_true", help='use reloader')
+        self.parser.add_argument('-d', action="store_true", help='use debugger')
 
         self.args = self.parser.parse_args()
         self.config = yaml.load(self.args.config_file[0].read())
@@ -23,7 +24,9 @@ class WebsiteRunner(object):
         
     def run(self):
         port = self.config['website']['port']
-        werkzeug.serving.run_simple('localhost', port, self.app, use_reloader=self.args.r)
+        werkzeug.serving.run_simple('localhost', port, self.app, 
+            use_reloader=self.args.r,
+            use_debugger=self.args.d)
         
 
 
