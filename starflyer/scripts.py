@@ -2,6 +2,7 @@ import argparse
 import yaml
 import wsgiref.simple_server
 import pkg_resources
+import werkzeug.serving
 
 class WebsiteRunner(object):
     """handler for running a website"""
@@ -11,9 +12,10 @@ class WebsiteRunner(object):
         self.parser = argparse.ArgumentParser(description='run a webserver')
         self.parser.add_argument('config_file', metavar='CONFIG', type=file, nargs=1,
                    help='the config file to read')
+        self.parser.add_argument('-r', action="store_true", help='use reloader')
 
-        args = self.parser.parse_args()
-        self.config = yaml.load(args.config_file[0].read())
+        self.args = self.parser.parse_args()
+        self.config = yaml.load(self.args.config_file[0].read())
 
         # read app
         group = 'starflyer_app_factory'
@@ -22,7 +24,8 @@ class WebsiteRunner(object):
         
     def run(self):
         port = self.config['website']['port']
-        wsgiref.simple_server.make_server('', port, self.app).serve_forever()
+        werkzeug.serving.run_simple('localhost', port, self.app, use_reloader=self.args.r)
+        
 
 
 def run():
