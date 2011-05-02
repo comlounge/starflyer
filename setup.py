@@ -24,7 +24,6 @@ setup(name='starflyer',
         "routes",
         "pyyaml",
         "argparse",
-        "wsgiref",
         "jinja2",
       ],
       entry_points="""
