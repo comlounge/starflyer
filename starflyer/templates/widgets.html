@@ -1,0 +1,103 @@
+{% macro text(title, name, helptext='', errors={}, value='', size=20,  required=false) %}
+    <div class="field" id="formfield-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <input type="text" id="{{name}}" name="{{name}}" value="{{value|e}}" size="{{size}}">
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro textarea(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) %}
+    <div class="field" id="formfiled-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <textarea id="{{name}}" name="{{name}}" rows="{{rows}}" cols="{{cols}}"></textarea>
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro checkbox(title, name, helptext='', errors={}, value=1, checked=false, required=false) %}
+    <div class="field" id="formfiled-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <input type="checkbox" id="{{name}}" name="{{name}}" value="{{value|e}}" {% if checked %}checked="checked"{% endif %}">
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro radio(title, name, helptext='', errors={}, values=[], checked='', required=false) %}
+    <div class="field" id="formfiled-{{name}}">
+        {{ _labelline(name, title, required) }}
+        {% for val in values %}
+            <input type="radio" id="{{name}}" name="{{name}}" value="{{val[0]|e}}" {% if checked==val[0] %}checked="checked"{% endif %}">{{val[1]}}<br/>
+        {% endfor %}
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro select(title, name, helptext='', errors={}, options=[], size=1, selected='', multiple=false, required=false) %}
+    <div class="field" id="formfiled-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <select name="{{name}}" size="{{size}}" {% if checked %}multiple{% endif %}>
+            <option value=""></option>
+            {% for option in options %}
+                <option {% if selected==option[0] %}selected="selected"{% endif %} value="{{option[0]}}">{{option[1]}}</option>
+            {% endfor %}
+        </select>
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro date(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) %}
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $.datepicker.setDefaults($.datepicker.regional['de']);
+            $("#datepicker-{{name}}").datepicker({
+                showOn: "button",
+                buttonImage: "/img/calendar.gif",
+                buttonImageOnly: true,
+                dateFormat: 'dd.mm.yy',
+                showAnim: 'fadeIn',
+                autoSize: true,
+                firstDay: 1,
+            });
+        });
+    </script>
+    <div class="field" id="formfiled-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <input type="text" id="datepicker-{{name}}">
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{% endmacro %}
+
+{% macro submit(value='Absenden') %}
+    <div class="field buttons">
+        <input type="submit" class="button block" value="{{value}}">
+    </div>
+{% endmacro %}
+
+
+
+{# helper macros #}
+
+
+{% macro _labelline(name, title='', required=false) %}
+    {% if title %}
+        <label for="{{name}}">{{title}}{% if required %}*{% endif %}</label>
+    {% endif %}
+{% endmacro %}
+
+{% macro _helpline(text='') %}
+    {% if text %}
+        <div class="help">{{text}}</div>
+    {% endif %}
+{% endmacro %}
+
+{% macro _errorline(name, errors={}) %}
+    {% if errors[name] %}
+        <div class="error">{{errors[name]}}</div>
+    {% endif %}
+{% endmacro %}
