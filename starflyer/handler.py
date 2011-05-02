@@ -58,24 +58,3 @@ class Handler(object):
         else:
             return werkzeug.exceptions.MethodNotAllowed()
         
-class StaticHandler(Handler):
-    """a handler for static files. It usually will be instantiated by the :class:`StaticHandlerFactory`.
-    """
-    
-    def __init__(self, filepath=None, **kw):
-        self.filepath = filepath
-        super(StaticHandler, self).__init__(**kw)
-    
-    def get(self, path_info):
-        return FileApp(os.path.join(self.filepath,path_info))
-        
-        
-class StaticHandlerFactory(object):
-    """a Handler factory for static resources such as JS, CSS and template files.
-    You need to initialize it with the path to the directory you want to serve"""
-    
-    def __init__(self, filepath):
-        self.filepath = filepath
-        
-    def __call__(self, **kw):
-        return StaticHandler(filepath = self.filepath, **kw)
