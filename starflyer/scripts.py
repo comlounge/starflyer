@@ -1,6 +1,5 @@
 import argparse
 import yaml
-import wsgiref.simple_server
 import pkg_resources
 import werkzeug.serving
 
