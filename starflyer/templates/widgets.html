@@ -1,7 +1,13 @@
-{% macro text(title, name, helptext='', errors={}, value='', size=20,  required=false) %}
+{% macro text(title, name, helptext='', errors={}, value='', size=20, maxlength=255, required=false, placeholder="") %}
     <div class="field" id="formfield-{{name}}">
         {{ _labelline(name, title, required) }}
-        <input type="text" id="{{name}}" name="{{name}}" value="{{value|e}}" size="{{size}}">
+        <input type="text" 
+               id="{{name}}" 
+               name="{{name}}" 
+               value="{{value|e}}" 
+               maxlength="{{maxlength}}" 
+               size="{{size}}" 
+               placeholder="{{placeholder}}">
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
@@ -19,7 +25,7 @@
 {% macro checkbox(title, name, helptext='', errors={}, value=1, checked=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
-        <input type="checkbox" id="{{name}}" name="{{name}}" value="{{value|e}}" {% if checked %}checked="checked"{% endif %}">
+        <input type="checkbox" id="{{name}}" name="{{name}}" value="{{value|e}}" {{'checked="checked"' if checked}}>
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
@@ -50,15 +56,20 @@
     </div>
 {% endmacro %}
 
-{% macro date(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) %}
+{% macro date(title, name, helptext='', errors={}, value='', 
+    required=false, 
+    lang="de",
+    calendar_button="/img/calendar.gif",
+    date_format="dd.mm.yy"
+    ) %}
     <script type="text/javascript">
         $(document).ready(function(){
-            $.datepicker.setDefaults($.datepicker.regional['de']);
+            $.datepicker.setDefaults($.datepicker.regional['{{lang}}']);
             $("#datepicker-{{name}}").datepicker({
                 showOn: "button",
-                buttonImage: "/img/calendar.gif",
+                buttonImage: "{{calendar_button}}",
                 buttonImageOnly: true,
-                dateFormat: 'dd.mm.yy',
+                dateFormat: '{{date_format}}',
                 showAnim: 'fadeIn',
                 autoSize: true,
                 firstDay: 1,
