@@ -1,4 +1,10 @@
-{% macro text(title, name, helptext='', errors={}, value='', size=20, maxlength=255, required=false, placeholder="") %}
+{#
+Text input field
+----------------
+Usage:         
+{{ widgets.text('Ihr Benutzername', 'username', 'Geben sie hier Ihren Benutzernamen ein.', errors=errors, required=true, size=100, placeholder="Ihr Name") }}
+#}
+{% macro text(title, name, helptext='', errors={}, value='', size=20, maxlength=255, required=false, placeholder="") -%}
     <div class="field" id="formfield-{{name}}">
         {{ _labelline(name, title, required) }}
         <input type="text" 
@@ -11,37 +17,76 @@
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
-{% endmacro %}
+{%- endmacro %}
 
-{% macro textarea(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) %}
+{#
+Textarea
+--------
+Usage:  
+{{ widgets.textarea('Ihre Nachricht', 'comment', 'Hinterlassen Sie uns eine Nachricht.', errors=errors, required=true) }}       
+#}
+{% macro textarea(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) -%}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
-        <textarea id="{{name}}" name="{{name}}" rows="{{rows}}" cols="{{cols}}"></textarea>
+        <textarea id="{{name}}" 
+                  name="{{name}}" 
+                  rows="{{rows}}" 
+                  cols="{{cols}}">
+            {{value}}
+        </textarea>
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
-{% endmacro %}
+{%- endmacro %}
 
+{#
+Checkbox input field
+--------------------
+Usage:  
+{{ widgets.checkbox('Newsletter', 'newsletter', 'Wollen Sie den Newsletter erhlaten?',checked=true, errors=errors) }}       
+#}
 {% macro checkbox(title, name, helptext='', errors={}, value=1, checked=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
-        <input type="checkbox" id="{{name}}" name="{{name}}" value="{{value|e}}" {{'checked="checked"' if checked}}>
+        <input type="checkbox" 
+               id="{{name}}" 
+               name="{{name}}" 
+               value="{{value|e}}" 
+               {{'checked="checked"' if checked}}>
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
 {% endmacro %}
 
+{#
+Radiobox input field
+--------------------
+Usage:  
+{{ widgets.radio('Radio', 'radio', values=[('a', 'A'), ('b', 'B')], checked='b', errors=errors) }}       
+'values' must be a list of tuples, e.g. [('a', 'A'), ('b', 'B')]
+#}
 {% macro radio(title, name, helptext='', errors={}, values=[], checked='', required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
         {% for val in values %}
-            <input type="radio" id="{{name}}" name="{{name}}" value="{{val[0]|e}}" {% if checked==val[0] %}checked="checked"{% endif %}">{{val[1]}}<br/>
+            <input type="radio" 
+                   id="{{name}}" 
+                   name="{{name}}" 
+                   value="{{val[0]|e}}"
+                   {{'checked="checked"' if checked==val[0]}}>{{val[1]}}<br/>
         {% endfor %}
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
 {% endmacro %}
 
+{#
+Select input field
+------------------
+Usage:  
+{{ widgets.select('Auswahl', 'select', options=[('a', 'A'), ('b', 'B')], errors=errors) }}       
+'values' must be a list of tuples, e.g. [('a', 'A'), ('b', 'B')]
+#}
 {% macro select(title, name, helptext='', errors={}, options=[], size=1, selected='', multiple=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
@@ -56,6 +101,13 @@
     </div>
 {% endmacro %}
 
+{#
+date input field
+----------------
+Usage:  
+{{ widgets.date('Datum', 'date', errors=errors, required=true) }}       
+It uses the DatePicker-plugin from jQuery-UI.
+#}
 {% macro date(title, name, helptext='', errors={}, value='', 
     required=false, 
     lang="de",
@@ -84,6 +136,12 @@
     </div>
 {% endmacro %}
 
+{#
+Submit button
+-------------
+Usage:  
+{{ widgets.submit() }}
+#}
 {% macro submit(value='Absenden') %}
     <div class="field buttons">
         <input type="submit" class="button block" value="{{value}}">
@@ -92,7 +150,11 @@
 
 
 
-{# helper macros #}
+{# 
+=============
+helper macros
+============= 
+#}
 
 
 {% macro _labelline(name, title='', required=false) %}
