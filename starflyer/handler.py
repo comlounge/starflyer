@@ -29,8 +29,7 @@ class Handler(object):
         """here you can adjust template vars before they get rendered"""
         return data
 
-    @ashtml
-    def render(self, tmplname=None, **kwargs):
+    def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
         this template otherwise take the default ``self.template``. You can
         pass in kwargs which are then passed to the template on rendering."""
@@ -38,7 +37,9 @@ class Handler(object):
             tmplname = self.template
         data = copy.copy(kwargs)
         data = self.prepare_render(data)
-        tmpl = self.settings.templates.get_template(tmplname)
+        data['values'] = values
+        data['errors'] = errors
+        tmpl = self.settings.pts.get_template(tmplname)
         return tmpl.render(**data)
 
     def redirect(self, location):
