@@ -4,13 +4,13 @@ Text input field
 Usage:         
 {{ widgets.text('Ihr Benutzername', 'username', 'Geben sie hier Ihren Benutzernamen ein.', errors=errors, required=true, size=100, placeholder="Ihr Name") }}
 #}
-{% macro text(title, name, helptext='', errors={}, value='', size=20, maxlength=255, required=false, placeholder="") -%}
+{% macro text(title, name, helptext='', default='', errors={}, values={}, size=20, maxlength=255, required=false, placeholder="") -%}
     <div class="field" id="formfield-{{name}}">
         {{ _labelline(name, title, required) }}
         <input type="text" 
                id="{{name}}" 
                name="{{name}}" 
-               value="{{value|e}}" 
+               value="{{values[name]|e if values[name] else default}}" 
                maxlength="{{maxlength}}" 
                size="{{size}}" 
                placeholder="{{placeholder}}">
@@ -25,14 +25,14 @@ Textarea
 Usage:  
 {{ widgets.textarea('Ihre Nachricht', 'comment', 'Hinterlassen Sie uns eine Nachricht.', errors=errors, required=true) }}       
 #}
-{% macro textarea(title, name, helptext='', errors={}, value='', rows=10, cols=60, required=false) -%}
+{% macro textarea(title, name, helptext='', default='', errors={}, values={}, rows=10, cols=60, required=false) -%}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
         <textarea id="{{name}}" 
                   name="{{name}}" 
                   rows="{{rows}}" 
                   cols="{{cols}}">
-            {{value}}
+            {{values[name]|e if values[name] else default}}
         </textarea>
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
@@ -45,13 +45,13 @@ Checkbox input field
 Usage:  
 {{ widgets.checkbox('Newsletter', 'newsletter', 'Wollen Sie den Newsletter erhlaten?',checked=true, errors=errors) }}       
 #}
-{% macro checkbox(title, name, helptext='', errors={}, value=1, checked=false, required=false) %}
+{% macro checkbox(title, name, helptext='', errors={}, values={}, checked=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
         <input type="checkbox" 
                id="{{name}}" 
                name="{{name}}" 
-               value="{{value|e}}" 
+               value="{{values[name]|e}}" 
                {{'checked="checked"' if checked}}>
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
@@ -87,13 +87,13 @@ Usage:
 {{ widgets.select('Auswahl', 'select', options=[('a', 'A'), ('b', 'B')], errors=errors) }}       
 'values' must be a list of tuples, e.g. [('a', 'A'), ('b', 'B')]
 #}
-{% macro select(title, name, helptext='', errors={}, options=[], size=1, selected='', multiple=false, required=false) %}
+{% macro select(title, name, helptext='', values={}, errors={}, options=[], size=1, multiple=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
         <select name="{{name}}" size="{{size}}" {% if checked %}multiple{% endif %}>
             <option value=""></option>
             {% for option in options %}
-                <option {% if selected==option[0] %}selected="selected"{% endif %} value="{{option[0]}}">{{option[1]}}</option>
+                <option {% if values[name]==option[0] %}selected="selected"{% endif %} value="{{option[0]}}">{{option[1]}}</option>
             {% endfor %}
         </select>
         {{ _helpline(helptext) }}
@@ -108,7 +108,7 @@ Usage:
 {{ widgets.date('Datum', 'date', errors=errors, required=true) }}       
 It uses the DatePicker-plugin from jQuery-UI.
 #}
-{% macro date(title, name, helptext='', errors={}, value='', 
+{% macro date(title, name, helptext='', errors={}, values={}, default='',
     required=false, 
     lang="de",
     calendar_button="/img/calendar.gif",
@@ -130,7 +130,10 @@ It uses the DatePicker-plugin from jQuery-UI.
     </script>
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
-        <input type="text" id="datepicker-{{name}}">
+        <input type="text" 
+               id="datepicker-{{name}}"
+               name="{{name}}"
+               value="{{values[name]|e if values[name] else default}}">
         {{ _helpline(helptext) }}
         {{ _errorline(name, errors) }}
     </div>
