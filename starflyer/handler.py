@@ -29,6 +29,7 @@ class Handler(object):
         """here you can adjust template vars before they get rendered"""
         return data
 
+    @ashtml()
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
         this template otherwise take the default ``self.template``. You can

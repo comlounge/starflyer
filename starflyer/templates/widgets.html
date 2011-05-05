@@ -87,13 +87,13 @@ Usage:
 {{ widgets.select('Auswahl', 'select', options=[('a', 'A'), ('b', 'B')], errors=errors) }}       
 'values' must be a list of tuples, e.g. [('a', 'A'), ('b', 'B')]
 #}
-{% macro select(title, name, helptext='', values={}, errors={}, options=[], size=1, multiple=false, required=false) %}
+{% macro select(title, name, helptext='', default='', values={}, errors={}, options=[], size=1, multiple=false, required=false) %}
     <div class="field" id="formfiled-{{name}}">
         {{ _labelline(name, title, required) }}
         <select name="{{name}}" size="{{size}}" {% if checked %}multiple{% endif %}>
             <option value=""></option>
             {% for option in options %}
-                <option {% if values[name]==option[0] %}selected="selected"{% endif %} value="{{option[0]}}">{{option[1]}}</option>
+                <option {{ 'selected="selected"' if values[name]==option[0] or default==option[0] }} value="{{option[0]}}">{{option[1]}}</option>
             {% endfor %}
         </select>
         {{ _helpline(helptext) }}
@@ -154,9 +154,9 @@ Usage:
 
 
 {# 
-=============
-helper macros
-============= 
+=====================
+=== helper macros ===
+=====================
 #}
 
 
