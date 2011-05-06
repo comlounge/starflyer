@@ -20,6 +20,27 @@ Usage:
 {%- endmacro %}
 
 {#
+Password input field
+--------------------
+Usage:         
+{{ widgets.text('your password', 'password', 'Please enter your password', errors=errors, required=true, size=100, placeholder="password") }}
+#}
+{% macro password(title, name, helptext='', default='', errors={}, values={}, size=20, maxlength=255, required=false, placeholder="") -%}
+    <div class="field" id="formfield-{{name}}">
+        {{ _labelline(name, title, required) }}
+        <input type="password" 
+               id="{{name}}" 
+               name="{{name}}" 
+               value="{{values[name]|e if values[name] else default}}" 
+               maxlength="{{maxlength}}" 
+               size="{{size}}" 
+               placeholder="{{placeholder}}">
+        {{ _helpline(helptext) }}
+        {{ _errorline(name, errors) }}
+    </div>
+{%- endmacro %}
+
+{#
 Textarea
 --------
 Usage:  
