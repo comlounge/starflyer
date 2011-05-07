@@ -28,7 +28,7 @@ class Handler(object):
     def prepare_render(self, data):
         """here you can adjust template vars before they get rendered"""
         return data
-
+    
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
         this template otherwise take the default ``self.template``. You can
