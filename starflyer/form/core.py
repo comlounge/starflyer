@@ -12,7 +12,8 @@ class RenderContext(object):
         """render the widget"""
         tag = self.widget.render(self)
         tmpl = self.form.tmpl_env.get_template("widget.html")
-        return tmpl.render(data=self.widget, tag=tag)
+        error = self.form.errors.get(self.widget.name, None)
+        return tmpl.render(data=self.widget, tag=tag, form = self.form, error=error)
 
 class Widget(object):
     """a field base class which emits widgets"""
@@ -21,13 +22,13 @@ class Widget(object):
     ATTRS = []
 
     type = "text"
+    css_class = ""
 
     def __init__(self, 
             name="",
-            label="",
-            description="",
+            label=u"",
+            description=u"",
             required=False,
-            css_class="",
             id = None,
             _charset = "utf-8",
             **kwargs):
@@ -37,12 +38,11 @@ class Widget(object):
         else:
             self.id = id
         if type(label) is not types.UnicodeType:
-            raise ValueError("label is not Unicode")
+            raise ValueError("label of field %s is not Unicode" %name)
         self.label = label
         if type(description) is not types.UnicodeType:
-            raise ValueError("description is not Unicode")
+            raise ValueError("description of field %s is not Unicode" %name)
         self.description = description
-        self.css_class = css_class
         self.required = required
         self.additional = kwargs
 
@@ -56,7 +56,6 @@ class Widget(object):
         attrs.update(self.additional)
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
-
 
         # process the value to be displayed
         if context.form.default.has_key(self.name):
@@ -74,16 +73,21 @@ class Widget(object):
 class Form(object):
     """a form"""
 
-    def __init__(self, tmpl_env, default = {}, vocabs = {}):
+    error_css_class = "error"
+
+    def __init__(self, tmpl_env, default = {}, values = {}, errors= {}, vocabs = {}):
         """initialize the form's widget. We pass in a ``tmpl_env`` which is a 
         ``jinja2.Environment`` and should contain a template called ``field.html``
         to be used for rendering a single field. Optionally you can pass in 
         ``vocabs`` which should contain the vocabularies to be used for select
         fields etc. ``default`` is a dictionary with which you can pass in data
         into the form as initial values."""
+        print errors
         self.tmpl_env = tmpl_env
         self.vocabs = vocabs
         self.default = default
+        self.values = values
+        self.errors = errors
         self.data = {}
         for widget in self.widgets:
             self.data[widget.name] = widget
