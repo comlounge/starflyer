@@ -9,6 +9,6 @@ class AttributeMapper(dict):
 
     def __setattr__(self, k,v):
         """store an attribute in the map"""
-        dict.__setattr__(self,k,v)
+        self[k] = v
 
 
