@@ -10,6 +10,7 @@ class Handler(object):
     """a request handler which is also the base class for an application"""
 
     template="" # default template to use
+    template_env = "templates"
     
     def __init__(self, app=None, request=None, settings={}, log=None):
         """initialize the Handler with the calling application and the request
@@ -40,7 +41,7 @@ class Handler(object):
         data = self.prepare_render(data)
         data['values'] = values
         data['errors'] = errors
-        tmpl = self.settings.pts.get_template(tmplname)
+        tmpl = self.settings[self.template_env].get_template(tmplname)
         return tmpl.render(**data)
 
     def redirect(self, location):
