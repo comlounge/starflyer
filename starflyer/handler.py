@@ -12,7 +12,7 @@ class Handler(object):
     template="" # default template to use
     template_env = "templates"
     
-    def __init__(self, app=None, request=None, settings={}, log=None):
+    def __init__(self, app=None, request=None, settings={}, log=None, sub_app=None):
         """initialize the Handler with the calling application and the request
         it has to handle."""
         
@@ -20,6 +20,7 @@ class Handler(object):
         self.request = request
         self.settings = settings
         self.log = log
+        self.sub_app = sub_app
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
@@ -41,7 +42,11 @@ class Handler(object):
         data = self.prepare_render(data)
         data['values'] = values
         data['errors'] = errors
-        tmpl = self.settings[self.template_env].get_template(tmplname)
+        if self.sub_app is not None:
+            tsettings = self.settings.apps[self.sub_app]
+        else:
+            tsettings = self.settings
+        tmpl = tsettings[self.template_env].get_template(tmplname)
         return tmpl.render(**data)
 
     def redirect(self, location):
@@ -55,8 +60,7 @@ class Handler(object):
         method = self.request.values.get("method", method)
         method = method.lower()
         if hasattr(self, method):
-            self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
-            del m['handler']
+            self.log.debug("calling method %s on handler '%s' " %(self.request.method, self))
             return getattr(self, method)(**m)
         else:
             return werkzeug.exceptions.MethodNotAllowed()

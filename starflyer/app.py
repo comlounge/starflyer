@@ -16,15 +16,21 @@ class Application(object):
         self.mapper = routes.Mapper()
         self.setup_handlers(self.mapper)
         self.loghandler = self.setup_logger()
-        #self.loghandler = FileHandler(self.logfilename)
 
     def __call__(self, environ, start_response):
         with self.loghandler.threadbound():
             request = werkzeug.Request(environ)
             m = self.mapper.match(environ = environ)
             if m is not None:
-                handler = m['handler'](app=self, request=request, settings=self.settings, log=Logger(self.settings.log_name))
+                handler = m['handler'](app=self, 
+                                       request=request, 
+                                       settings=self.settings, 
+                                       log=Logger(self.settings.log_name), 
+                                       sub_app = m.get('app_name', None))
                 try:
+                    del m['handler']
+                    if m.has_key('app_name'):
+                        del m['app_name']
                     return handler.handle(**m)(environ, start_response)
                 except werkzeug.exceptions.HTTPException, e:
                     return e(environ, start_response)
