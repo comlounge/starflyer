@@ -5,6 +5,7 @@ from paste.fileapp import FileApp
 import werkzeug.exceptions
 from paste.auth import auth_tkt
 from decorators import ashtml
+from werkzeug.contrib.securecookie import SecureCookie
 
 class Handler(object):
     """a request handler which is also the base class for an application"""
@@ -18,7 +19,8 @@ class Handler(object):
         self.app = app
         self.request = request
         self.settings = settings
-        self.log = log
+        self.log = log            
+        self.messages_out = self.messages_in = []
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
@@ -39,6 +41,8 @@ class Handler(object):
         data = self.prepare_render(data)
         data['values'] = values
         data['errors'] = errors
+        data['flash_messages'] = self.messages_in+self.messages_out
+        self.messages_out = []
         tmpl = self.settings.pts.get_template(tmplname)
         return tmpl.render(**data)
 
@@ -53,9 +57,29 @@ class Handler(object):
         method = self.request.values.get("method", method)
         method = method.lower()
         if hasattr(self, method):
+            self.messages_in = self.decode_messages(self.request.cookies)
             self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
             del m['handler']
             return getattr(self, method)(**m)
         else:
             return werkzeug.exceptions.MethodNotAllowed()
         
+        
+    #
+    # message encoding/decoding        
+    #
+    
+    def flash(self, msg, **kwargs):
+        data = {'msg' : msg}
+        data.update(kwargs)
+        self.messages_out.append(data)
+   
+    def decode_messages(self, cookies):
+        if cookies.has_key('m'):
+            m = SecureCookie.unserialize(cookies['m'], self.settings.cookie_secret)
+            return m['msg']
+        return []
+    
+    def encode_messages(self, messages):
+        c = SecureCookie({'msg': messages}, self.settings.cookie_secret)
+        return c.serialize()
