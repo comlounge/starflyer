@@ -43,7 +43,7 @@ class Handler(object):
         data['errors'] = errors
         data['flash_messages'] = self.messages_in+self.messages_out
         self.messages_out = []
-        tmpl = self.settings.pts.get_template(tmplname)
+        tmpl = self.settings.templates.get_template(tmplname)
         return tmpl.render(**data)
 
     def redirect(self, location):
