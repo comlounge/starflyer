@@ -7,6 +7,7 @@ import functools
 import json
 import datetime
 
+
 def jsonconverter(obj):
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
@@ -27,6 +28,7 @@ class ashtml(object):
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             response = werkzeug.Response(method(self, *args, **kwargs))
+            response.set_cookie('m', self.encode_messages(self.messages_out))
             response.content_type = "text/html; charset=%s" %that.charset
             return response
         return wrapper
