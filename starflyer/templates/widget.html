@@ -1,0 +1,9 @@
+<div class="field {{form.error_css_class if error}} {{css_class}}" id="{{data.id}}-field">
+    <label for="{{data.id}}">{{data.label}}{% if data.required %}*{% endif %}</label>
+    {{ tag }}
+    <div class="help">{{data.description}}</div>
+    {% if error %}
+        <div class="error">{{error}}</div>
+    {% endif %}
+</div>
+
