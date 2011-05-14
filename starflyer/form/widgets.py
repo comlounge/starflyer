@@ -5,7 +5,7 @@ class Text(Widget):
     """a text input field"""
 
     type="text"
-    css_class="field field-text"
+    css_class="widget widget-text"
     ATTRS = ['size','maxlength']
     size=10
     maxlength =100
@@ -13,32 +13,38 @@ class Text(Widget):
 class Password(Text):
     """an password input field"""
 
-    css_class="field field-password"
+    css_class="widget widget-password"
     type="password"
 
 class Email(Text):
     """a text widget"""
 
-    css_class="field field-email"
+    css_class="widget widget-email"
     type="email"
 
 class URL(Text):
     """an URL input field"""
 
-    css_class="field field-url"
+    css_class="widget widget-url"
     type="url"
+
+class File(Text):
+    """an file input field"""
+
+    css_class="widget widget-file"
+    type="file"
 
 class DatePicker(Text):
     """a datepicker widget which can be enhanced by jquery etc.
     The JS code is not included and thus you have to initialize the widget
     yourself in your template."""
 
-    css_class="field field-datepicker"
+    css_class="widget widget-datepicker"
 
 class Checkbox(Widget):
     """a checkbox input field"""
 
-    css_class="field field-checkbox"
+    css_class="widget widget-checkbox"
     type="checkbox"
 
     # TODO: make it do something, e.g. set checked
@@ -49,7 +55,7 @@ class Select(Widget):
     we cannot pass it to the ``Widget`` constructor but instead we will
     assume it to be retrieved from ``self.form.options[widget.name]()``"""
 
-    css_class="field field-select"
+    css_class="widget widget-select"
     ATTRS = ['multiple']
     multiple = None
 
@@ -94,12 +100,12 @@ class Textarea(Widget):
     we cannot pass it to the ``Widget`` constructor but instead we will
     assume it to be retrieved from ``self.form.options[widget.name]()``"""
 
-    css_class="field field-textarea"
+    css_class="widget widget-textarea"
     ATTRS = ['cols', 'rows']
     cols = 40
     rows = 10
 
-    def render(self, context):
+    def render(self, render_context):
         """render this widget."""
 
         # create the select field
@@ -110,7 +116,9 @@ class Textarea(Widget):
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
 
+        value = self.get_value(render_context.form)
+
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
         attrs = " ".join(attrs)
 
-        return u"<textarea {0}>{1}</textarea>".format(attrs, "value")
+        return u"<textarea {0}>{1}</textarea>".format(attrs, value)
