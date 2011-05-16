@@ -20,7 +20,8 @@ class Handler(object):
         self.request = request
         self.settings = settings
         self.log = log            
-        self.messages_out = self.messages_in = []
+        self.messages_out = []
+        self.messages_in = []
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
@@ -77,7 +78,7 @@ class Handler(object):
     def decode_messages(self, cookies):
         if cookies.has_key('m'):
             m = SecureCookie.unserialize(cookies['m'], self.settings.cookie_secret)
-            return m['msg']
+            return m.get('msg', [])
         return []
     
     def encode_messages(self, messages):
