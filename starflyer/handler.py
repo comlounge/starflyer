@@ -12,7 +12,7 @@ class Handler(object):
 
     template="" # default template to use
     
-    def __init__(self, app=None, request=None, settings={}, log=None):
+    def __init__(self, app=None, request=None, settings={}, log=None, url_generator=None):
         """initialize the Handler with the calling application and the request
         it has to handle."""
         
@@ -20,6 +20,7 @@ class Handler(object):
         self.request = request
         self.settings = settings
         self.log = log            
+        self.url_generator = url_generator
         self.messages_out = []
         self.messages_in = []
         self.prepare() # hook for handling auth etc.
@@ -31,6 +32,10 @@ class Handler(object):
     def prepare_render(self, data):
         """here you can adjust template vars before they get rendered"""
         return data
+
+    def url_for(self, name, **kwargs):
+        """return a URL generated from the mapper"""
+        return self.url_generator(name)
     
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render

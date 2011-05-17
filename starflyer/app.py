@@ -22,8 +22,13 @@ class Application(object):
         with self.loghandler.threadbound():
             request = werkzeug.Request(environ)
             m = self.mapper.match(environ = environ)
+            url_generator = routes.util.URLGenerator(self.mapper, environ)
             if m is not None:
-                handler = m['handler'](app=self, request=request, settings=self.settings, log=Logger(self.settings.log_name))
+                handler = m['handler'](app=self, 
+                                request=request, 
+                                settings=self.settings, 
+                                log=Logger(self.settings.log_name),
+                                url_generator = url_generator)
                 try:
                     return handler.handle(**m)(environ, start_response)
                 except werkzeug.exceptions.HTTPException, e:
