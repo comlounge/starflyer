@@ -23,18 +23,14 @@ class Handler(object):
         self.url_generator = url_generator
         self.messages_out = []
         self.messages_in = []
-
-        self.cookies_to_delete = []
-        self.cookies_to_add = []
-        self.headers = []
-        self.status = 200
-
         self.response = werkzeug.Response()
-
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
-        """overwrite this method if you need auth handling etc."""
+        """overwrite this method if you need auth handling etc. This method
+        will be called before calling the actual method. You can set here
+        additional instance variable etc. if you need them and you have access
+        to ``self.request``, ``self.settings`` and ``self.app``."""
         pass
 
     def prepare_render(self, data):
