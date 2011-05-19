@@ -4,3 +4,4 @@ from decorators import ashtml, asjson
 from settings import AttributeMapper
 
 import form
+import processors
