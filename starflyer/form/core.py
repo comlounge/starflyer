@@ -112,8 +112,14 @@ class Form(object):
 
     error_css_class = "error"
     widget_template = "widget.html"
+    widgets = [] # list of Widget instances
 
-    def __init__(self, template_env, default = {}, values = {}, errors= {}, vocabs = {}):
+    def __init__(self, 
+                 template_env=None, 
+                 default = {}, 
+                 values = {}, 
+                 errors= {}, 
+                 vocabs = {}):
         """initialize the form's widget. We pass in a ``tmpl_env`` which is a 
         ``jinja2.Environment`` and should contain a template called ``field.html``
         to be used for rendering a single field. Optionally you can pass in 
@@ -135,5 +141,8 @@ class Form(object):
         return widget(self)
 
     __getattr__ = __getitem__
+
+    def process(self, **kw):
+        """run the processors on all widgets"""
 
 
