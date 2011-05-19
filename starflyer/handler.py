@@ -23,6 +23,14 @@ class Handler(object):
         self.url_generator = url_generator
         self.messages_out = []
         self.messages_in = []
+
+        self.cookies_to_delete = []
+        self.cookies_to_add = []
+        self.headers = []
+        self.status = 200
+
+        self.response = werkzeug.Response()
+
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
@@ -62,15 +70,24 @@ class Handler(object):
         method = self.request.method
         method = self.request.values.get("method", method)
         method = method.lower()
-        if hasattr(self, method):
-            self.messages_in = self.decode_messages(self.request.cookies)
-            self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
-            del m['handler']
-            return getattr(self, method)(**m)
-        else:
+
+        # if method is not present in handler, return Method Not Allowed
+        if not hasattr(self, method):
             return werkzeug.exceptions.MethodNotAllowed()
-        
-        
+
+        # decode messages for transfer
+        self.messages_in = self._decode_messages(self.request.cookies)
+        self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
+        del m['handler']
+
+        # call the handler
+        getattr(self, method)(**m)
+
+        # we assume that the method changes the response in place
+        # it might alternatively call an exception so we don't reach the
+        # return 
+        return self.response
+
     #
     # message encoding/decoding        
     #
@@ -80,12 +97,12 @@ class Handler(object):
         data.update(kwargs)
         self.messages_out.append(data)
    
-    def decode_messages(self, cookies):
+    def _decode_messages(self, cookies):
         if cookies.has_key('m'):
             m = SecureCookie.unserialize(cookies['m'], self.settings.cookie_secret)
             return m.get('msg', [])
         return []
     
-    def encode_messages(self, messages):
+    def _encode_messages(self, messages):
         c = SecureCookie({'msg': messages}, self.settings.cookie_secret)
         return c.serialize()

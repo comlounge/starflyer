@@ -27,10 +27,9 @@ class ashtml(object):
 
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
-            response = werkzeug.Response(method(self, *args, **kwargs))
-            response.set_cookie('m', self.encode_messages(self.messages_out))
-            response.content_type = "text/html; charset=%s" %that.charset
-            return response
+            self.response.content_type = "text/html; charset=%s" %that.charset
+            self.response.data = method(self, *args, **kwargs)
+            self.response.set_cookie('m', self._encode_messages(self.messages_out))
         return wrapper
 
 
@@ -53,17 +52,16 @@ class asjson(object):
         def wrapper(self, *args, **kwargs):
             data = method(self, *args, **kwargs)
             s = json.dumps(data, default = jsonconverter)
-            print self
             if self.request.args.has_key("callback"):
                 callback = self.request.args.get("callback")
                 s = "%s(%s)" %(callback, s)
-                response = werkzeug.Response(s)
-                response.content_type = "application/javascript"
+                self.response.data(s)
+                self.response.content_type = "application/javascript"
             else:
-                response = werkzeug.Response(s)
-                response.content_type = "application/json"
+                self.response.data(s)
+                self.response.content_type = "application/json"
             for a,v in that.headers.items():
-                response.headers[a] = v
+                self.response.headers[a] = v
             return response
 
         return wrapper
