@@ -1,7 +1,22 @@
-from core import Widget
+from core import Widget, no_value
+from starflyer.processors import Error
 import werkzeug
 
-class Text(Widget):
+__all__ = ['Text', 'Password', 'Email', 'URL', 'File', 'DatePicker', 'Checkbox', 
+           'Select', 'Textarea', 'Input']
+
+class Input(Widget):
+    """an input widget"""
+
+    def from_form(self, formdata, **kw):
+        """check if the value is an empty string or missing and raise an
+        exception in case it is required."""
+        v = formdata.get(self.name, no_value)
+        if (v is no_value or v.strip()=="") and self.required:
+            raise Error('required', self.messages['required'])
+        return v
+
+class Text(Input):
     """a text input field"""
 
     type="text"
@@ -105,6 +120,14 @@ class Textarea(Widget):
     cols = 40
     rows = 10
 
+    def from_form(self, formdata, **kw):
+        """check if the value is an empty string or missing and raise an
+        exception in case it is required."""
+        v = formdata.get(self.name, no_value)
+        if (v is no_value or v.strip()=="") and self.required:
+            raise Error('required', self.messages['required'])
+        return v
+
     def render(self, render_context):
         """render this widget."""
 
@@ -116,7 +139,7 @@ class Textarea(Widget):
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
 
-        value = self.get_value(render_context.form)
+        value = self.get_widget_value(render_context.form)
 
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
         attrs = " ".join(attrs)

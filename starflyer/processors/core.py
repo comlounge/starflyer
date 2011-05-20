@@ -47,6 +47,7 @@ class Processor(object):
     """base class for all processors"""
 
     attrs = {}
+    messages = {}
 
     def __init__(self, **kwargs):
         """initialize the field's attributes by taking either a default
@@ -55,6 +56,10 @@ class Processor(object):
         attrs = copy.copy(self.attrs)
         for a,v in attrs.items():
             setattr(self, a, kwargs.get(a,v))
+
+    def _error(self, code):
+        raise Error(code, self.messages[code] %self.__dict__)
+
 
 def process(data, processors=[], **kw):
     """run all ``processors`` on ``data``. It will return 

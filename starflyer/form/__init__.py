@@ -1,2 +1,2 @@
-from core import Form, Widget, RenderContext
+from core import *
 import widgets

@@ -1,5 +1,22 @@
 import types
 import werkzeug
+import starflyer.processors as processors
+
+__all__ = ['no_value', 'FormError', 'RenderContext', 'Widget', 'Form']
+
+no_value = object()
+
+class FormError(Exception):
+    """an exception raised on validation failures"""
+
+    def __init__(self, errors=[]):
+        """initialize this exception with a list of ``Error`` instances"""
+        self.errors = errors
+        ed = {}
+        for a,v in errors.items():
+            # TODO: translate it? 
+            ed[a] = v.msg
+        self.error_dict = ed
 
 class RenderContext(object):
     """a render context which annotates a widget with a settings dict"""
@@ -35,6 +52,9 @@ class Widget(object):
 
     type = "text"
     css_class = ""
+    messages = {
+        'required' : 'This field is required'
+    }
 
     def __init__(self, 
             name="",
@@ -42,8 +62,10 @@ class Widget(object):
             description=u"",
             required=False,
             id = None,
+            processors_out = [], # form data -> python (validation)
+            processors_in = [], # python (db obj) -> form data
             _charset = "utf-8",
-            **kwargs):
+            **kw):
         self.name = name
         if id is None:
             self.id = name
@@ -56,24 +78,65 @@ class Widget(object):
             raise ValueError("description of field %s is not Unicode" %name)
         self.description = description
         self.required = required
-        self.additional = kwargs
+        self.additional = kw
+        self.processors_out = processors_out
+        self.processors_in = processors_in
 
-    def get_value(self, form):
+    def get_widget_value(self, form):
         """return the value to be displayed inside the widget. This will either
         come from the ``defaults`` attribute of the form or it`s ``values`` dict.
         The former will usually be populated with data from an database record and
         the latter will be populated from a previous form input, e.g. on an error
         condition on a different widget."""
 
-        _no_value = object()
-
         n = self.name
-        value = form.values.get(n, _no_value)
-        if value is _no_value:
+        value = form.values.get(n, no_value)
+        if value is no_value:
             value = form.default.get(n, u'')
         return value
+
+    def get_value(self, formdata, **kw):
+        """return the data from the form for use in Python. This will be called
+        by the form processors after submitting a form. """
+        value = self.from_form(formdata, **kw)
+        return self.process_out(value, **kw)
+
+    def to_form(self, value, **kw):
+        """convert a value coming from python to be used in a form by this widget.
+        This can e.g. be splitting a date in date, month and year fields"""
+        return value
+
+    def from_form(self, formdata, **kw):
+        """convert data received from the form to something we can pass to python.
+        This can e.g. be converting three separate date, month and year fields into
+        a datetime object. If errors occur you should raise an ``processors.Error`` 
+        exception. Note that further processors might run afterwards. Also not
+        that you receive the complete form data here as only the widget can know
+        which sub fields it is using."""
+        v = formdata.get(self.name, no_value)
+        if v is no_value:
+            raise processors.Error('required', self.messages['required'])
+
+    def process_out(self, value, **kw):
+        """run processors on data coming from this widget and being passed to python.
+        The value will already be converted from form data to a single value and thus
+        this runs after ``from_form()``. It should return a value or raise an
+        ``processors.Error`` exception.  """
+
+        return processors.process(value, self.processors_out, **kw).data
+
+    def process_in(self, value, **kw):
+        """run processors on data coming from python and being passed to this
+        widget. This will run before ``to_form()``. You might want to provide
+        defaults or something similar. 
+
+        It should return a value or raise an ``processors.Error`` exception.  
+        """
+
+        return processors.process(value, self.processors_out, **kw).data
+
         
-    def render(self, render_context = None, add_class="", **kwargs):
+    def render(self, render_context = None, add_class="", **kw):
         """render this widget. We also pass in the ``RenderContext`` instance
         to be used in order to be able to access the ``Form`` instance and additional
         runtime information contained within.
@@ -91,12 +154,12 @@ class Widget(object):
         for a in self.BASE_ATTRS+self.ATTRS:
             attrs[a] = getattr(self, a)
         attrs.update(self.additional)
-        attrs.update(kwargs)
+        attrs.update(kw)
         attrs['class'] = attrs['css_class']+" "+add_class
         del attrs["css_class"]
 
         # process the value to be displayed
-        attrs['value'] = self.get_value(render_context.form)
+        attrs['value'] = self.get_widget_value(render_context.form)
 
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
         attrs = " ".join(attrs)
@@ -143,6 +206,19 @@ class Form(object):
     __getattr__ = __getitem__
 
     def process(self, **kw):
-        """run the processors on all widgets"""
+        """run the out processors on all widgets"""
+        result = {}
+        errors = {}
+        for n, widget in self.data.items():
+            try: 
+                result[n] = widget.get_value(self.values, **kw)
+            except processors.Error, e:
+                errors[n] = e
+        if len(errors.keys()) > 0:
+            raise FormError(errors)
+        return result
+            
+
+
 
 

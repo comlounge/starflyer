@@ -20,9 +20,6 @@ class String(Processor):
         'required' : u'This field is required',
     }
 
-    def _error(self, code):
-        raise Error(code, self.messages[code] %self.__dict__)
-
     def __call__(self, ctx):
         """process the data."""
         data = ctx.data
