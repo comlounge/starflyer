@@ -84,21 +84,24 @@ class Widget(object):
 
     def get_widget_value(self, form):
         """return the value to be displayed inside the widget. This will either
-        come from the ``defaults`` attribute of the form or it`s ``values`` dict.
+        come from the ``defaults`` attribute of the form or the previous request data.
         The former will usually be populated with data from an database record and
         the latter will be populated from a previous form input, e.g. on an error
         condition on a different widget."""
 
         n = self.name
-        value = form.values.get(n, no_value)
+        if form.request is not None:
+            value = form.request.form.get(n, no_value)
         if value is no_value:
             value = form.default.get(n, u'')
         return value
 
-    def get_value(self, formdata, **kw):
+    def get_value(self, request, **kw):
         """return the data from the form for use in Python. This will be called
-        by the form processors after submitting a form. """
-        value = self.from_form(formdata, **kw)
+        by the form processors after submitting a form. ``request`` is a werkzeug
+        Request instance which should store form data in ``request.form`` and
+        files in ``request.files``"""
+        value = self.from_form(request, **kw)
         return self.process_out(value, **kw)
 
     def to_form(self, value, **kw):
@@ -106,16 +109,19 @@ class Widget(object):
         This can e.g. be splitting a date in date, month and year fields"""
         return value
 
-    def from_form(self, formdata, **kw):
+    def from_form(self, request, **kw):
         """convert data received from the form to something we can pass to python.
         This can e.g. be converting three separate date, month and year fields into
         a datetime object. If errors occur you should raise an ``processors.Error`` 
         exception. Note that further processors might run afterwards. Also not
         that you receive the complete form data here as only the widget can know
         which sub fields it is using."""
-        v = formdata.get(self.name, no_value)
+        # this only is the default implementation for plain fields, adjust as you need
+        # in your own widget
+        v = request.form.get(self.name, no_value)
         if v is no_value:
             raise processors.Error('required', self.messages['required'])
+        return v
 
     def process_out(self, value, **kw):
         """run processors on data coming from this widget and being passed to python.
@@ -180,7 +186,7 @@ class Form(object):
     def __init__(self, 
                  template_env=None, 
                  default = {}, 
-                 values = {}, 
+                 request = None, 
                  errors= {}, 
                  vocabs = {}):
         """initialize the form's widget. We pass in a ``tmpl_env`` which is a 
@@ -188,11 +194,12 @@ class Form(object):
         to be used for rendering a single field. Optionally you can pass in 
         ``vocabs`` which should contain the vocabularies to be used for select
         fields etc. ``default`` is a dictionary with which you can pass in data
-        into the form as initial values."""
+        into the form as initial values. ``request`` is a werkzeug Request object
+        from which we read files and form data"""
         self.template_env = template_env
         self.vocabs = vocabs
         self.default = default # this might come from an object
-        self.values = values # this might come from a form and overrides the defaults
+        self.request = request # this might come from a form and overrides the defaults
         self.errors = errors
         self.data = {}
         for widget in self.widgets:
@@ -211,7 +218,7 @@ class Form(object):
         errors = {}
         for n, widget in self.data.items():
             try: 
-                result[n] = widget.get_value(self.values, **kw)
+                result[n] = widget.get_value(self.request, **kw)
             except processors.Error, e:
                 errors[n] = e
         if len(errors.keys()) > 0:

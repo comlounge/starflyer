@@ -1,6 +1,7 @@
 import copy
 
-__all__ = ['ProcessorContext', 'ProcessingException', 'Break', 'Error', 'process']
+__all__ = ['ProcessorContext', 'ProcessingException', 'Break', 'Error', 'process', 
+           'Processor']
 
 class ProcessorContext(object):
     """a context for holding data and metadata during a processor chain call"""
@@ -14,9 +15,10 @@ class ProcessorContext(object):
         
         """
         self.data = data 
-        self.kw = kw
         self.errors = []
         self.success = True
+        for a,v in kw.items():
+            setattr(self, a, v)
 
     def add_error(self, code, msg):
         self.errors.append({'code' : code, 'msg' : msg})
