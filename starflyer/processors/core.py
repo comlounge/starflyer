@@ -1,4 +1,5 @@
 import copy
+from starflyer import AttributeMapper
 
 __all__ = ['ProcessorContext', 'ProcessingException', 'Break', 'Error', 'process', 
            'Processor']
@@ -17,8 +18,7 @@ class ProcessorContext(object):
         self.data = data 
         self.errors = []
         self.success = True
-        for a,v in kw.items():
-            setattr(self, a, v)
+        self.attrs = AttributeMapper(copy.deepcopy(kw))
 
     def add_error(self, code, msg):
         self.errors.append({'code' : code, 'msg' : msg})
@@ -63,11 +63,29 @@ class Processor(object):
         raise Error(code, self.messages[code] %self.__dict__)
 
 
-def process(data, processors=[], **kw):
-    """run all ``processors`` on ``data``. It will return 
-    the ``ProcessorContext``instance which can then be checked for 
-    ``errors`` or the ``success`` attribute."""
-    ctx = ProcessorContext(data, **kw)
+def process(data, processors=[], **attrs):
+    """run a list of ``Processor``instances given in ``processors`` 
+    on ``data``. The data will be stored in a ``ProcessorContext`` instance.
+
+    It returns the ``ProcessorContext`` instance on success and failure. You can
+    check the the ``success`` flag on the context to find out whether the run
+    was successful or not. In case it was not you can find all the catched
+    errors in the ``errors`` attribute of the context.
+
+    :param data: the data on which the processors should run. It will be stored in a
+                 newly created ``ProcessorContext`` instance which will then be passed
+                 from processor to processor. Data can be anything as long as at least
+                 the first processor understands it and converts it to something
+                 usable for the next one etc.
+    :param processors: A list of ``Processor`` instances which are run in sequence on 
+                       the data passed in.
+    :param attrs: A dictionary of additional attributes which will be passed to the
+                ``ProcessorContext``. This is useful for e.g. passing in dynamic 
+                data such as a session to predefined ``Processor`` instances.
+                It is available to each processor via the ``attrs`` attribute of 
+                the context instance. ``attrs`` is an ``AttributeMapper``.
+    """
+    ctx = ProcessorContext(data, **attrs)
     for processor in processors:
         try:
             ctx = processor(ctx)

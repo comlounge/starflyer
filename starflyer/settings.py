@@ -1,3 +1,4 @@
+import copy
 
 class AttributeMapper(dict):
     """a dictionary like object which also is accessible via getattr/setattr"""
@@ -11,5 +12,11 @@ class AttributeMapper(dict):
     def __setattr__(self, k,v):
         """store an attribute in the map"""
         self[k] = v
+
+    def _clone(self):
+        """return a clone of this object"""
+        d = copy.deepcopy(self) 
+        return AttributeMapper(d)
+
 
 

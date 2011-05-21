@@ -1,6 +1,7 @@
 import types
 import werkzeug
 import starflyer.processors as processors
+from starflyer import AttributeMapper
 
 __all__ = ['no_value', 'FormError', 'RenderContext', 'Widget', 'Form']
 
@@ -21,9 +22,18 @@ class FormError(Exception):
 class RenderContext(object):
     """a render context which annotates a widget with a settings dict"""
 
-    def __init__(self, widget, form):
+    def __init__(self, widget, form, **kw):
+        """initialize the render context with the ``widget`` to render and
+        the ``form`` the widget belongs to. We will copy the attributes
+        from ``form.ctx_attrs`` to this instance and add additional keyword
+        arguments to it."""
+        
         self.form = form
         self.widget = widget
+        self.request = form.request
+        self.default = form.default
+        self.attrs = AttributeMapper(form.ctx)
+        self.attrs.update(kw)
 
     def __call__(self, widget_attrs={}, field_attrs={}, template=None):
         """render the widget. This will be called form within
@@ -96,20 +106,26 @@ class Widget(object):
             value = form.default.get(n, u'')
         return value
 
-    def get_value(self, request, **kw):
+    def get_value(self, form):
         """return the data from the form for use in Python. This will be called
         by the form processors after submitting a form. ``request`` is a werkzeug
         Request instance which should store form data in ``request.form`` and
         files in ``request.files``"""
-        value = self.from_form(request, **kw)
-        return self.process_out(value, **kw)
+        value = self.from_form(form)
+        return self.process_out(form, value)
 
-    def to_form(self, value, **kw):
+    def to_form(self, ctx, **kw):
         """convert a value coming from python to be used in a form by this widget.
-        This can e.g. be splitting a date in date, month and year fields"""
-        return value
+        This can e.g. be splitting a date in date, month and year fields. A ``RenderContext``
+        needs to be passed in ``ctx``"""
+        n = self.name
+        if ctx.request is not None:
+            value = ctx.request.form.get(n, no_value)
+        if value is no_value:
+            value = ctx.default.get(n, u'')
+        return self.process_in(value, **ctx.attrs)
 
-    def from_form(self, request, **kw):
+    def from_form(self, form):
         """convert data received from the form to something we can pass to python.
         This can e.g. be converting three separate date, month and year fields into
         a datetime object. If errors occur you should raise an ``processors.Error`` 
@@ -118,17 +134,16 @@ class Widget(object):
         which sub fields it is using."""
         # this only is the default implementation for plain fields, adjust as you need
         # in your own widget
-        v = request.form.get(self.name, no_value)
-        if v is no_value:
+        value = form.request.form.get(self.name, no_value)
+        if value is no_value:
             raise processors.Error('required', self.messages['required'])
-        return v
+        return self.process_out(value, form)
 
-    def process_out(self, value, **kw):
+    def process_out(self, form, value, **kw):
         """run processors on data coming from this widget and being passed to python.
         The value will already be converted from form data to a single value and thus
         this runs after ``from_form()``. It should return a value or raise an
         ``processors.Error`` exception.  """
-
         return processors.process(value, self.processors_out, **kw).data
 
     def process_in(self, value, **kw):
@@ -138,9 +153,12 @@ class Widget(object):
 
         It should return a value or raise an ``processors.Error`` exception.  
         """
+        return processors.process(value, self.processors_in, **kw).data
 
-        return processors.process(value, self.processors_out, **kw).data
-
+    def on_success(self, **kw):
+        """called on successful submitting and validating a form. Override this to 
+        cleanup any sessions, temporary files etc."""
+        return 
         
     def render(self, render_context = None, add_class="", **kw):
         """render this widget. We also pass in the ``RenderContext`` instance
@@ -188,7 +206,8 @@ class Form(object):
                  default = {}, 
                  request = None, 
                  errors= {}, 
-                 vocabs = {}):
+                 vocabs = {},
+                 ctx = {}):
         """initialize the form's widget. We pass in a ``tmpl_env`` which is a 
         ``jinja2.Environment`` and should contain a template called ``field.html``
         to be used for rendering a single field. Optionally you can pass in 
@@ -202,6 +221,7 @@ class Form(object):
         self.request = request # this might come from a form and overrides the defaults
         self.errors = errors
         self.data = {}
+        self.ctx = ctx
         for widget in self.widgets:
             self.data[widget.name] = widget
 
@@ -212,17 +232,28 @@ class Form(object):
 
     __getattr__ = __getitem__
 
-    def process(self, **kw):
+    @property
+    def has_errors(self):
+        """return if this is a form with errors which basically means that
+        it is a form which was submitted before and we call it again with errors"""
+        return self.errors != {}
+
+    def process(self):
         """run the out processors on all widgets"""
         result = {}
         errors = {}
         for n, widget in self.data.items():
             try: 
-                result[n] = widget.get_value(self.request, **kw)
+                result[n] = widget.get_value(self)
             except processors.Error, e:
                 errors[n] = e
         if len(errors.keys()) > 0:
             raise FormError(errors)
+
+        # complete all widgets
+        print "completing"
+        for n, widget in self.data.items():
+            widget.on_success(**self.ctx)
         return result
             
 

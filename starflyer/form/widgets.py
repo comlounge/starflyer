@@ -8,10 +8,10 @@ __all__ = ['Text', 'Password', 'Email', 'URL', 'File', 'DatePicker', 'Checkbox',
 class Input(Widget):
     """an input widget"""
 
-    def from_form(self, request, **kw):
+    def from_form(self, form):
         """check if the value is an empty string or missing and raise an
         exception in case it is required."""
-        v = request.form.get(self.name, no_value)
+        v = form.request.form.get(self.name, no_value)
         if (v is no_value or v.strip()=="") and self.required:
             raise Error('required', self.messages['required'])
         return v
@@ -49,11 +49,10 @@ class File(Text):
     css_class="widget widget-file"
     type="file"
 
-    def from_form(self, request, **kw):
+    def from_form(self, form):
         """check if the value is an empty string or missing and raise an
         exception in case it is required."""
-        v = request.files.get(self.name, no_value)
-        print dir(v)
+        v = form.request.files.get(self.name, no_value)
         if v is no_value and self.required:
             raise Error('required', self.messages['required'])
         return v
@@ -129,10 +128,10 @@ class Textarea(Widget):
     cols = 40
     rows = 10
 
-    def from_form(self, request, **kw):
+    def from_form(self, form):
         """check if the value is an empty string or missing and raise an
         exception in case it is required."""
-        v = request.form.get(self.name, no_value)
+        v = form.request.form.get(self.name, no_value)
         if (v is no_value or v.strip()=="") and self.required:
             raise Error('required', self.messages['required'])
         return v
