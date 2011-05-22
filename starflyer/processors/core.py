@@ -1,7 +1,7 @@
 import copy
 from starflyer import AttributeMapper
 
-__all__ = ['ProcessorContext', 'ProcessingException', 'Break', 'Error', 'process', 
+__all__ = ['ProcessorContext', 'ProcessingException', 'Error', 'process', 
            'Processor']
 
 class ProcessorContext(object):
@@ -32,11 +32,6 @@ class ProcessingException(Exception):
     def __init__(self, code=None, msg=None):
         self.code = code
         self.msg = msg
-
-
-class Break(ProcessingException):
-    """raise this if you want the processor chain to stop. Pass in an optional
-    error message to the constructor."""
 
 class Error(ProcessingException):
     """raise this if you just want to report an error. Pass in the error message
@@ -91,12 +86,9 @@ def process(data, processors=[], **attrs):
     for processor in processors:
         try:
             ctx = processor(ctx)
-        except Break, e:
-            ctx.add_error(e.code, e.msg)
-            ctx.success = False
-            return ctx
         except Error, e:
             ctx.add_error(e.code, e.msg)
             ctx.success = False
+            return ctx
     return ctx
 
