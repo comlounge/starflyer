@@ -11,6 +11,7 @@ class String(Processor):
         'max_length' : None, # maximum length of string
         'strip' : True, # should string be stripped first?
         'required' : False, # check if the string is empty
+        'default' : u'', # the default value
     }
 
     messages = {
@@ -25,11 +26,13 @@ class String(Processor):
         data = ctx.data
         if data is None and self.required:
             self._error('required')
+        if data is None:
+            data = self.default
         if type(data) not in [types.StringType, types.UnicodeType]:
             self._error('wrong_type')
         if self.strip:
             data = data.strip()
-        if len(data)==0:
+        if len(data)==0 and self.required:
             self._error('required')
         if len(data)<self.min_length:
             self._error('too_short')
