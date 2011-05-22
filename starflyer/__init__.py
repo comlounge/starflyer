@@ -5,3 +5,5 @@ from settings import AttributeMapper
 
 import form
 import processors
+import exceptions
+
