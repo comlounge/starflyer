@@ -25,13 +25,13 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.doctest']
+extensions = ['sphinx.ext.autodoc', 
+              'sphinx.ext.autosummary',
+              'sphinx.ext.intersphinx', 
+              'sphinx.ext.doctest', 
+              'sphinx.ext.viewcode']
 
-try:
-    import starflyer
-except ImportError:
-    print "NOOOOO"
-
+import starflyer
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -99,7 +99,7 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 sys.path.append(os.path.abspath('_themes'))
 html_theme_path = ['_themes']
-html_theme = 'nature'
+html_theme = 'sphinxdoc'
 #html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
