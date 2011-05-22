@@ -64,7 +64,7 @@ class Processor(object):
 
 
 def process(data, processors=[], **attrs):
-    """run a list of ``Processor``instances given in ``processors`` 
+    """run a list of ``Processor`` instances given in ``processors`` 
     on ``data``. The data will be stored in a ``ProcessorContext`` instance.
 
     It returns the ``ProcessorContext`` instance on success and failure. You can
@@ -84,6 +84,8 @@ def process(data, processors=[], **attrs):
                 data such as a session to predefined ``Processor`` instances.
                 It is available to each processor via the ``attrs`` attribute of 
                 the context instance. ``attrs`` is an ``AttributeMapper``.
+    :return: returns a ``ProcessorContext`` instance with the result of the
+        last processor stored in ``data``.
     """
     ctx = ProcessorContext(data, **attrs)
     for processor in processors:
