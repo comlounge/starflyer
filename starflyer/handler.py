@@ -51,6 +51,7 @@ class Handler(object):
         data = self.prepare_render(data)
         data['values'] = values
         data['errors'] = errors
+        data['url'] = self.request.path
         data['flash_messages'] = self.messages_in+self.messages_out
         self.messages_out = []
         tmpl = self.settings.templates.get_template(tmplname)
