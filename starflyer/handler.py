@@ -23,7 +23,7 @@ class Handler(object):
         self.url_generator = url_generator
         self.messages_out = []
         self.messages_in = []
-        self.response = werkzeug.Response()
+        self.response = werkzeug.wrappers.Response()
         self.prepare() # hook for handling auth etc.
 
     def prepare(self):
@@ -57,9 +57,21 @@ class Handler(object):
         tmpl = self.settings.templates.get_template(tmplname)
         return tmpl.render(**data)
 
-    def redirect(self, location):
+    def redirect(self, location, code=302):
         """redirect to ``location``"""
-        return werkzeug.redirect(location=location)
+        #return werkzeug.redirect(location=location)
+        display_location = location
+        if isinstance(location, unicode):
+            from werkzeug.urls import iri_to_uri
+            location = iri_to_uri(location)
+        self.response = werkzeug.wrappers.BaseResponse(
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
+            '<title>Redirecting...</title>\n'
+            '<h1>Redirecting...</h1>\n'
+            '<p>You should be redirected automatically to target URL: '
+            '<a href="%s">%s</a>.  If not click the link.' %
+            (location, display_location), code, mimetype='text/html')
+        self.response.headers['Location'] = location
 
     def handle(self, **m):
         """handle a single request. This means checking the method to use, looking up

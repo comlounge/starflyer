@@ -16,10 +16,14 @@ class Redirect(werkzeug.exceptions.HTTPException):
             location = iri_to_uri(location)
         self.location = location
         self.code = code
-
+        self.response = self._get_response()
+        
     def get_response(self, environ):
+        return self.response
+
+    def _get_response(self):
         """return the response"""
-        response = werkzeug.wrappers.BaseResponse(
+        response = werkzeug.wrappers.Response(
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n'
             '<title>Redirecting...</title>\n'
             '<h1>Redirecting...</h1>\n'
