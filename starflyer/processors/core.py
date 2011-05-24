@@ -18,7 +18,8 @@ class ProcessorContext(object):
         self.data = data 
         self.errors = []
         self.success = True
-        self.attrs = AttributeMapper(copy.deepcopy(kw))
+        # TODO: Use something read only maybe
+        self.attrs = AttributeMapper(kw)
 
     def add_error(self, code, msg):
         self.errors.append({'code' : code, 'msg' : msg})
@@ -84,11 +85,12 @@ def process(data, processors=[], **attrs):
     """
     ctx = ProcessorContext(data, **attrs)
     for processor in processors:
-        try:
-            ctx = processor(ctx)
-        except Error, e:
-            ctx.add_error(e.code, e.msg)
-            ctx.success = False
-            return ctx
+        ctx = processor(ctx)
+        #try:
+            #ctx = processor(ctx)
+        #except Error, e:
+            #ctx.add_error(e.code, e.msg)
+            #ctx.success = False
+            #return ctx
     return ctx
 
