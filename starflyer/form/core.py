@@ -112,7 +112,8 @@ class Widget(object):
         Request instance which should store form data in ``request.form`` and
         files in ``request.files``"""
         value = self.from_form(form)
-        return self.process_out(form, value)
+        p = self.process_out(form, value)
+        return p
 
     def to_form(self, ctx, **kw):
         """convert a value coming from python to be used in a form by this widget.
@@ -155,11 +156,6 @@ class Widget(object):
         """
         return processors.process(value, self.processors_in, **kw).data
 
-    def on_success(self, **kw):
-        """called on successful submitting and validating a form. Override this to 
-        cleanup any sessions, temporary files etc."""
-        return 
-        
     def render(self, render_context = None, add_class="", **kw):
         """render this widget. We also pass in the ``RenderContext`` instance
         to be used in order to be able to access the ``Form`` instance and additional
@@ -200,6 +196,8 @@ class Form(object):
     error_css_class = "error"
     widget_template = "widget.html"
     widgets = [] # list of Widget instances
+    processors_in = []
+    processors_out = []
 
     def __init__(self, 
                  template_env=None, 
@@ -224,6 +222,9 @@ class Form(object):
         self.ctx = ctx
         for widget in self.widgets:
             self.data[widget.name] = widget
+        
+        # run incoming processors to create the defaults
+        self.default =  processors.process(self.default, self.processors_in, **ctx).data
 
     def __getitem__(self, widget_name):
         """return a render context"""
@@ -238,8 +239,15 @@ class Form(object):
         it is a form which was submitted before and we call it again with errors"""
         return self.errors != {}
 
-    def process(self):
-        """run the out processors on all widgets"""
+    def process(self, obj=None, **kw):
+        """run the out processors on all widgets.
+        
+        :param obj: optional database object etc. which can be passed in. It will be
+                used in the form related processors
+        :param **kw: additional keyword arguments will be passed to the ``ProcessorContext``
+            instance.
+        :return: a data dictionary with ``formdata`` and ``obj``.
+        """
         result = {}
         errors = {}
         for n, widget in self.data.items():
@@ -250,13 +258,9 @@ class Form(object):
         if len(errors.keys()) > 0:
             raise FormError(errors)
 
-        # complete all widgets
-        print "completing"
-        for n, widget in self.data.items():
-            widget.on_success(**self.ctx)
-        return result
-            
-
-
-
+        value = {
+            'obj' : obj,
+            'formdata' : result
+        }
+        return processors.process(value, self.processors_out, **kw).data
 
