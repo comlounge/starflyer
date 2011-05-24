@@ -112,8 +112,7 @@ class Widget(object):
         Request instance which should store form data in ``request.form`` and
         files in ``request.files``"""
         value = self.from_form(form)
-        p = self.process_out(form, value)
-        return p
+        return self.process_out(form, value)
 
     def to_form(self, ctx, **kw):
         """convert a value coming from python to be used in a form by this widget.
@@ -136,7 +135,7 @@ class Widget(object):
         # this only is the default implementation for plain fields, adjust as you need
         # in your own widget
         value = form.request.form.get(self.name, no_value)
-        if value is no_value:
+        if value is no_value and self.required:
             raise processors.Error('required', self.messages['required'])
         return self.process_out(value, form)
 
@@ -145,7 +144,9 @@ class Widget(object):
         The value will already be converted from form data to a single value and thus
         this runs after ``from_form()``. It should return a value or raise an
         ``processors.Error`` exception.  """
-        return processors.process(value, self.processors_out, **kw).data
+        return processors.process(value, self.processors_out, 
+                form = form, 
+                widget = self, **kw).data
 
     def process_in(self, value, **kw):
         """run processors on data coming from python and being passed to this
