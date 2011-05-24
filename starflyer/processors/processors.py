@@ -1,7 +1,10 @@
+import datetime
+
+
 from core import Processor, Error
 import types
 
-__all__ = ['String', 'Int']
+__all__ = ['String', 'Int', 'Date']
 
 class String(Processor):
     """check if data is a string with the allowed properties""" 
@@ -75,4 +78,47 @@ class Int(Processor):
             self._error('too_large')
         ctx.data = data
         return ctx
+
+
+class Date(Processor):
+    """check if data is date representation"""
+    
+    attrs = {
+        'format' : u'%Y-%m-%d',
+        'not_before' : None,
+        'not_after' : None,
+        'after_now' : False,
+        'not_after_now' : False,
+    }
+    
+    messages = {
+        'wrong_format' : u'Please enter the date in the following format: %(format)s.',
+        'not_before': u'Please enter a date larger than %(not_before)s.',
+        'not_after': u'Please enter a date smaller than %(not_before)s.',
+        'after_now': u'Please enter a date/time larger than now.',
+        'not_after_now': u'Please enter a date/time smaller than now.',
+        'required' : u'This field is required',
+    }
+    
+    def __call__(self, ctx):
+        """process a date"""
+        data = ctx.data
+        try:
+            data = datetime.datetime.strptime(data, self.format)
+        except ValueError:
+            self._error('wrong_format')
+        if self.not_before is not None and data < self.not_before:
+            self._error('not_before')
+        if self.not_after is not None and data > self.not_after:
+            self._error('not_after')
+        if self.after_now:
+            if data < datetime.datetime.now():
+                self._error('after_now')
+        if self.not_after_now:
+            if data > datetime.datetime.now():
+                self._error('not_after_now')
+        
+        ctx.data = data
+        return ctx
+         
 
