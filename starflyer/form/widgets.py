@@ -43,6 +43,12 @@ class URL(Text):
     css_class="widget widget-url"
     type="url"
 
+class Hidden(Text):
+    """a hidden input field"""
+
+    css_class="widget widget-hidden"
+    type="hidden"
+
 class File(Text):
     """an file input field"""
 
@@ -153,3 +159,15 @@ class Textarea(Widget):
         attrs = " ".join(attrs)
 
         return u"<textarea {0}>{1}</textarea>".format(attrs, value)
+
+class Search(Text):
+    """a text widget with a search button"""
+
+    css_class="widget widget-search"
+    type="search"
+    
+    def render(self, *args, **kwargs):
+        tag = super(Search, self).render(*args, **kwargs)
+        print tag
+        search_button = "<img src=/img/search_button_green.png>"
+        return '{0} {1}'.format(tag, search_button)
