@@ -3,6 +3,13 @@ import copy
 class AttributeMapper(dict):
     """a dictionary like object which also is accessible via getattr/setattr"""
 
+    __slots__ = []
+
+    def __init__(self, default={}, *args, **kwargs):
+        super(AttributeMapper, self).__init__(*args, **kwargs)
+        self.update(default)
+        self.update(kwargs)
+
     def __getattr__(self, k):
         """retrieve some data from the dict"""
         if self.has_key(k):
