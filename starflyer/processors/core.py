@@ -1,7 +1,7 @@
 import copy
 from starflyer import AttributeMapper
 
-__all__ = ['ProcessorContext', 'ProcessingException', 'Error', 'process', 
+__all__ = ['ProcessorContext', 'ProcessingException', 'Error', 'process', 'Break',
            'Processor']
 
 class ProcessorContext(object):
@@ -30,16 +30,29 @@ class ProcessorContext(object):
 class ProcessingException(Exception):
     """base class for all processor related exceptions"""
 
-    def __init__(self, code=None, msg=None):
-        self.code = code
-        self.msg = msg
 
 class Error(ProcessingException):
     """raise this if you just want to report an error. Pass in the error message
     to the constructor, e.g. ``Error(u'invalid data')`` """
 
+    def __init__(self, code=None, msg=None):
+        self.code = code
+        self.msg = msg
 
-# one processor object. These can be chained in a ProcessorChain.
+
+class Break(ProcessingException):
+    """raise this exception if you don't want to report an error but want
+    to stop further processing in a processor chain. The last context
+    will then be returned by ``process()``
+
+    You have to pass in the context to the exception object which you might have
+    changed before.
+    
+    """
+
+    def __init__(self, ctx):
+        self.ctx = ctx
+
 
 class Processor(object):
     """base class for all processors"""
@@ -85,12 +98,9 @@ def process(data, processors=[], **attrs):
     """
     ctx = ProcessorContext(data, **attrs)
     for processor in processors:
-        ctx = processor(ctx)
-        #try:
-            #ctx = processor(ctx)
-        #except Error, e:
-            #ctx.add_error(e.code, e.msg)
-            #ctx.success = False
-            #return ctx
+        try:
+            ctx = processor(ctx)
+        except Break, e:
+            return e.ctx 
     return ctx
 
