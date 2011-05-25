@@ -40,7 +40,7 @@ class Handler(object):
 
     def url_for(self, name, **kwargs):
         """return a URL generated from the mapper"""
-        return self.url_generator(name)
+        return self.url_generator(name, **kwargs)
     
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
