@@ -89,6 +89,7 @@ class Date(Processor):
         'not_after' : None,
         'after_now' : False,
         'not_after_now' : False,
+        'required' : False,
     }
     
     messages = {
@@ -103,6 +104,8 @@ class Date(Processor):
     def __call__(self, ctx):
         """process a date"""
         data = ctx.data
+        if data is None and self.required:
+            self._error('required')
         try:
             data = datetime.datetime.strptime(data, self.format)
         except ValueError:
