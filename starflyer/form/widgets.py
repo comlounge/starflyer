@@ -1,6 +1,7 @@
 from core import Widget, no_value
 from starflyer.processors import Error
 import werkzeug
+import datetime
 
 __all__ = ['Text', 'Password', 'Email', 'URL', 'File', 'DatePicker', 'Checkbox', 
            'Select', 'Textarea', 'Input']
@@ -68,7 +69,19 @@ class DatePicker(Text):
     The JS code is not included and thus you have to initialize the widget
     yourself in your template."""
 
-    css_class="widget widget-datepicker"
+    css_class = "widget widget-datepicker"
+    format = "%d.%m.%Y"
+    INSTANCE_ATTRS = ['format']
+
+    def get_widget_value(self, form):
+        """convert a value coming from python to be used in a form by this widget.
+        This can e.g. be splitting a date in date, month and year fields. A ``RenderContext``
+        needs to be passed in ``ctx``"""
+        print "ok"
+        v = super(DatePicker, self).get_widget_value(form)
+        if isinstance(v, datetime.datetime):
+            return v.strftime(self.format)
+        return v
 
 class Checkbox(Widget):
     """a checkbox input field"""

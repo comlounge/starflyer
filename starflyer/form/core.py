@@ -59,6 +59,7 @@ class Widget(object):
 
     BASE_ATTRS = ['type', 'name', 'css_class', 'id']
     ATTRS = []
+    INSTANCE_ATTRS = [] # add attributes here which are not to be used in the input field
 
     type = "text"
     css_class = ""
@@ -91,6 +92,10 @@ class Widget(object):
         self.additional = kw
         self.processors_out = processors_out
         self.processors_in = processors_in
+        for a,v in kw.items():
+            if a in self.INSTANCE_ATTRS:
+                setattr(self, a, v)
+            
 
     def get_widget_value(self, form):
         """return the value to be displayed inside the widget. This will either
@@ -98,7 +103,6 @@ class Widget(object):
         The former will usually be populated with data from an database record and
         the latter will be populated from a previous form input, e.g. on an error
         condition on a different widget."""
-
         n = self.name
         if form.request is not None:
             value = form.request.form.get(n, no_value)
