@@ -1,10 +1,11 @@
 import datetime
+import HTMLParser  
 
 
 from core import Processor, Error
 import types
 
-__all__ = ['String', 'Int', 'Date']
+__all__ = ['String', 'HTML', 'Int', 'Date']
 
 class String(Processor):
     """check if data is a string with the allowed properties""" 
@@ -50,6 +51,32 @@ class String(Processor):
         if self.max_length is not None and len(data)>self.max_length:
             self._error('too_long')
         ctx.data = data
+        return ctx
+
+class MLStripper(HTMLParser.HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+
+class HTML(String):
+    """a processor for checking HTML related features"""
+
+    def __call__(self, ctx):
+        """we first try the string processor and then we add out own checks"""
+
+        ctx = super(HTML, self).__call__(ctx)
+
+        if self.required:
+            s = MLStripper()
+            s.feed(ctx.data)
+            data = s.get_data()
+            if len(data.strip())==0:
+                self._error("required")
         return ctx
 
 class Int(Processor):
