@@ -15,6 +15,8 @@ class String(Processor):
         'strip' : True, # should string be stripped first?
         'required' : False, # check if the string is empty
         'default' : u'', # the default value
+        'strict' : True, # strict: we don't try to convert it to a string
+        'encoding' : "utf-8", # the input encoding we expect
     }
 
     messages = {
@@ -32,7 +34,13 @@ class String(Processor):
         if data is None:
             data = self.default
         if type(data) not in [types.StringType, types.UnicodeType]:
-            self._error('wrong_type')
+            if self.strict:
+                self._error('wrong_type')
+            try:
+                data = unicode(data, self.encoding)
+            except TypeError:
+                # try again without encoding
+                data = unicode(data)
         if self.strip:
             data = data.strip()
         if len(data)==0 and self.required:
