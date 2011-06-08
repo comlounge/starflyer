@@ -267,5 +267,12 @@ class Form(object):
             'obj' : obj,
             'formdata' : result
         }
-        return processors.process(value, self.processors_out, **kw).data
+        errors = {}
+        try:
+            v = processors.process(value, self.processors_out, **kw).data
+            return v
+        except processors.Error, e:
+            errors[n] = e
+        if len(errors.keys()) > 0:
+            raise FormError(errors)
 
