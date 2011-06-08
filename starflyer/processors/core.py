@@ -39,6 +39,9 @@ class Error(ProcessingException):
         self.code = code
         self.msg = msg
 
+    def __str__(self):
+        return "<Error %s (%s)>" %(self.code, self.msg)
+
 
 class Break(ProcessingException):
     """raise this exception if you don't want to report an error but want
