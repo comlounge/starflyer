@@ -70,7 +70,7 @@ class DatePicker(Text):
     yourself in your template."""
 
     css_class = "widget widget-datepicker"
-    format = "%d.%m.%Y"
+    format = "%Y/%m/%d"
     INSTANCE_ATTRS = ['format']
 
     def get_widget_value(self, form):
