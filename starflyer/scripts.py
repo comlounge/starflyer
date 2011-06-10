@@ -27,8 +27,29 @@ class WebsiteRunner(object):
         werkzeug.serving.run_simple('localhost', port, self.app, 
             use_reloader=self.args.r,
             use_debugger=self.args.d)
-        
 
+class ScriptBase(object):
+    """handler for running a script under a certain context. Simply
+    derive from this class and add a ``__call__()`` method."""
+
+    description = "run a dummy script"
+
+    def __init__(self):
+        """initialize the script runner with the arg parser etc."""
+        self.parser = argparse.ArgumentParser(description=self.description)
+        self.parser.add_argument('config_file', metavar='CONFIG', type=file, nargs=1,
+                   help='the config file to use for this script')
+
+        self.args = self.parser.parse_args()
+        self.config = yaml.load(self.args.config_file[0].read())
+
+        # read app
+        group = 'starflyer_setup'
+        entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
+        self.settings = entrypoint.load()(**self.config['app'])
+        
+    def __call__(self): 
+        print "please override this method to run a script within settings %s " %self.settings
 
 def run():
     """run a website"""
