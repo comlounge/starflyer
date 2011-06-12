@@ -12,7 +12,7 @@ def jsonconverter(obj):
     if isinstance(obj, datetime.datetime):
         return obj.isoformat()
     else:
-        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
+        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
 
 
 class ashtml(object):
@@ -55,14 +55,13 @@ class asjson(object):
             if self.request.args.has_key("callback"):
                 callback = self.request.args.get("callback")
                 s = "%s(%s)" %(callback, s)
-                self.response.data(s)
+                self.response.data = s
                 self.response.content_type = "application/javascript"
             else:
-                self.response.data(s)
+                self.response.data = s
                 self.response.content_type = "application/json"
             for a,v in that.headers.items():
                 self.response.headers[a] = v
-            return response
 
         return wrapper
 
