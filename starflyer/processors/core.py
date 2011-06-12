@@ -35,9 +35,16 @@ class Error(ProcessingException):
     """raise this if you just want to report an error. Pass in the error message
     to the constructor, e.g. ``Error(u'invalid data')`` """
 
-    def __init__(self, code=None, msg=None):
+    def __init__(self, code=None, msg=None, **attrs):
+        """initialize the processor Error
+        :param code: The short name of the error
+        :param msg: The long description of the error
+        :param attrs: optional keyword arguments which are set on the Error instance
+        """
         self.code = code
         self.msg = msg
+        for a,v in attrs.items():
+            setattr(self, a,v)
 
     def __str__(self):
         return "<Error %s (%s)>" %(self.code, self.msg)
@@ -71,8 +78,15 @@ class Processor(object):
         for a,v in attrs.items():
             setattr(self, a, kwargs.get(a,v))
 
-    def _error(self, code):
-        raise Error(code, self.messages[code] %self.__dict__)
+    def _error(self, code, **attrs):
+        """raise an ``Error`` with ``code``.
+
+        :param code: The short code of the error. This is used to retrieve
+            the long description from the ``messages`` class variable.
+        :param attrs: optional keyword arguments to be stored in the ``Error`` instance.
+        :return: raises an ``Error`` instance
+        """
+        raise Error(code, self.messages[code] %self.__dict__, **attrs)
 
 
 def process(data, processors=[], **attrs):
