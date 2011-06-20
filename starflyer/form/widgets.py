@@ -78,7 +78,6 @@ class DatePicker(Text):
         """convert a value coming from python to be used in a form by this widget.
         This can e.g. be splitting a date in date, month and year fields. A ``RenderContext``
         needs to be passed in ``ctx``"""
-        print "ok"
         v = super(DatePicker, self).get_widget_value(form)
         if isinstance(v, datetime.datetime):
             return v.strftime(self.format)
