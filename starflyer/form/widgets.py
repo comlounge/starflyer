@@ -2,6 +2,7 @@ from core import Widget, no_value
 from starflyer.processors import Error
 import werkzeug
 import datetime
+import types
 
 __all__ = ['Text', 'Password', 'Email', 'URL', 'File', 'DatePicker', 'Checkbox', 
            'Select', 'Textarea', 'Input']
@@ -111,6 +112,10 @@ class Select(Widget):
     def render(self, context):
         """render this widget."""
 
+        value = self.get_widget_value(context.form)
+        if type(value) not in (types.ListType, types. TupleType):
+            value = [value]
+
         # create the select field
         attrs = {}
         for a in self.BASE_ATTRS+self.ATTRS:
@@ -131,10 +136,27 @@ class Select(Widget):
                 options = options()
         else:
             options = self.options
-        options = ['<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)) for a,v in options]
-        options = "\n".join(options)
+        items = []
+        for elem in options:
+            if type(elem) in (types.UnicodeType, types.StringType):
+                a = v = elem
+            else:
+                a,v = elem
+            if str(a) in value:
+                items.append('<option selected="selected" value="%s">%s</option>' %(werkzeug.escape(a, True),v))
+            else:
+                items.append('<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)))
+        items = "\n".join(items)
 
-        return u"<select {0}>{1}</select>".format(attrs, options)
+        return u"<select {0}>{1}</select>".format(attrs, items)
+
+    def from_form(self, form):
+        """check if the value is an empty string or missing and raise an
+        exception in case it is required."""
+        v = form.request.form.getlist(self.name)
+        if len(v)==0:
+            raise Error('required', self.messages['required'])
+        return v
 
 class Textarea(Widget):
     """a select widget. In order to work this widget also needs

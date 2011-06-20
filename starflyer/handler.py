@@ -7,20 +7,36 @@ from paste.auth import auth_tkt
 from decorators import ashtml
 from werkzeug.contrib.securecookie import SecureCookie
 import exceptions
+import starflyer
 
 class Handler(object):
     """a request handler which is also the base class for an application"""
 
     template="" # default template to use
     
-    def __init__(self, app=None, request=None, settings={}, log=None, url_generator=None):
+    def __init__(self, 
+            app=None, 
+            request=None, 
+            settings={}, 
+            args = {},
+            log=None, 
+            url_generator=None):
         """initialize the Handler with the calling application and the request
-        it has to handle."""
+        it has to handle.
+        
+        :param app: The ``Application`` instance this handler belongs to
+        :param request: The request object
+        :param settings: The global settings dict
+        :param args: The arguments returned by the matched route
+        :param log: A logbook ``Logger`` instance 
+        :param url_generator: The url generator we use 
+        """
         
         self.app = app
         self.request = request
         self.settings = settings
         self.log = log            
+        self.args = args
         self.url_generator = url_generator
         self.messages_out = []
         self.messages_in = []
@@ -34,13 +50,15 @@ class Handler(object):
         to ``self.request``, ``self.settings`` and ``self.app``."""
         pass
 
-    def prepare_render(self, data):
-        """here you can adjust template vars before they get rendered"""
-        return data
-
-    def url_for(self, name, **kwargs):
+    def url_for(self, name, append_unknown=False, **kwargs):
         """return a URL generated from the mapper"""
-        return self.url_generator(name, **kwargs)
+        return self.url_generator.build(name, kwargs, append_unknown=append_unknown)
+
+    def prepare_render(self, params):
+        """provide attributes to a to template to be rendered by adding
+        it to the provided ``params`` dictionary and returning it.
+        """
+        return params
     
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
@@ -48,16 +66,18 @@ class Handler(object):
         pass in kwargs which are then passed to the template on rendering."""
         if tmplname is None:
             tmplname = self.template
-        data = copy.copy(kwargs)
-        data = self.prepare_render(data)
-        data['values'] = values
-        data['errors'] = errors
-        data['url'] = self.request.path
-        data['url_for'] = self.url_for
-        data['flash_messages'] = self.messages_in+self.messages_out
+
+        params = starflyer.AttributeMapper()
+        params.update(kwargs)
+        params = self.prepare_render(params)
+        params['values'] = values
+        params['errors'] = errors
+        params['url'] = self.request.path
+        params['url_for'] = self.url_for
+        params['flash_messages'] = self.messages_in+self.messages_out
         self.messages_out = []
         tmpl = self.settings.templates.get_template(tmplname)
-        return tmpl.render(**data)
+        return tmpl.render(**params)
 
     def redirect(self, location, code=302):
         """redirect to ``location``"""
@@ -78,8 +98,8 @@ class Handler(object):
 
         # decode messages for transfer
         self.messages_in = self._decode_messages(self.request.cookies)
-        self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
-        del m['handler']
+        #self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
+        #del m['handler']
 
         # call the handler
         getattr(self, method)(**m)
