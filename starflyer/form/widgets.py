@@ -152,7 +152,10 @@ class Select(Widget):
     def from_form(self, form):
         """check if the value is an empty string or missing and raise an
         exception in case it is required."""
-        v = form.request.form.getlist(self.name)
+        if self.multiple:
+            v = form.request.form.getlist(self.name)
+        else:
+            v = form.request.form.get(self.name)
         if len(v)==0:
             raise Error('required', self.messages['required'])
         return v
