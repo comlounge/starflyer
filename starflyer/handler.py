@@ -50,9 +50,9 @@ class Handler(object):
         to ``self.request``, ``self.settings`` and ``self.app``."""
         pass
 
-    def url_for(self, name, append_unknown=False, **kwargs):
+    def url_for(self, name, force_external = False, append_unknown=False, **kwargs):
         """return a URL generated from the mapper"""
-        return self.url_generator.build(name, kwargs, append_unknown=append_unknown)
+        return self.url_generator.build(name, kwargs, force_external = force_external, append_unknown=append_unknown)
 
     def prepare_render(self, params):
         """provide attributes to a to template to be rendered by adding
