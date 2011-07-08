@@ -99,7 +99,7 @@ class Select(Widget):
 
     css_class="widget widget-select"
     ATTRS = ['multiple']
-    multiple = None
+    multiple = False
 
     def __init__(self,*args, **kwargs):
         """initialize the select widget wich an optional set of fixed options"""
@@ -107,6 +107,8 @@ class Select(Widget):
         if kwargs.has_key("options"):
             del kwargs['options']
         super(Select, self).__init__(*args, **kwargs)
+        if "multiple" in kwargs:
+            self.multiple = kwargs['multiple']
 
     def render(self, context):
         """render this widget."""
@@ -205,6 +207,5 @@ class Search(Text):
     
     def render(self, *args, **kwargs):
         tag = super(Search, self).render(*args, **kwargs)
-        print tag
         search_button = "<img src=/img/search_button_green.png>"
         return '{0} {1}'.format(tag, search_button)
