@@ -90,7 +90,7 @@ class Application(object):
         
         def inject(record):
             """the injection callback for any log record"""
-            record.extra['handler'] = str(m['handler'])
+            record.extra['handler'] = str(handler)
             record.extra['url'] = request.url
             record.extra['method'] = request.method
             record.extra['ip'] = request.remote_addr
