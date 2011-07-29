@@ -81,25 +81,25 @@ class Application(object):
         except NotFound:
             return werkzeug.exceptions.NotFound()(environ, start_response)
 
-        handler = handler_cls(app=self, 
-                    request=request, 
-                    settings=self.settings, 
-                    args = args,
-                    log=Logger(self.settings.log_name),
-                    url_generator = self.url_map.generator(environ))
-        
         def inject(record):
             """the injection callback for any log record"""
-            record.extra['handler'] = str(handler)
+            record.extra['handler'] = str(handler_cls)
             record.extra['url'] = request.url
             record.extra['method'] = request.method
             record.extra['ip'] = request.remote_addr
-
+            record.extra['ip'] = request.remote_addr
+            record.hid = id(request)
             # TODO: add a hook for adding more information
 
         with Processor(inject):
             with self.loghandler.threadbound():
                 try:
+                    handler = handler_cls(app=self, 
+                                request=request, 
+                                settings=self.settings, 
+                                args = args,
+                                log=Logger(self.settings.log_name),
+                                url_generator = self.url_map.generator(environ))
                     return handler.handle(**args)(environ, start_response)
                 except werkzeug.exceptions.HTTPException, e:
                     return e(environ, start_response)
