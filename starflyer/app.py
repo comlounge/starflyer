@@ -80,14 +80,15 @@ class Application(object):
             return e(environ, start_response)
         except NotFound:
             return werkzeug.exceptions.NotFound()(environ, start_response)
-        
+
         def inject(record):
             """the injection callback for any log record"""
             record.extra['handler'] = str(handler_cls)
             record.extra['url'] = request.url
             record.extra['method'] = request.method
             record.extra['ip'] = request.remote_addr
-
+            record.extra['ip'] = request.remote_addr
+            record.hid = id(request)
             # TODO: add a hook for adding more information
 
         with Processor(inject):
