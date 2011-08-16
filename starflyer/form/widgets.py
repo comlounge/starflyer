@@ -98,8 +98,10 @@ class Select(Widget):
     assume it to be retrieved from ``self.form.options[widget.name]()``"""
 
     css_class="widget widget-select"
-    ATTRS = ['multiple']
+    ATTRS = ['multiple', 'radio']
+    INSTANCE_ATTRS = ['radio']
     multiple = False
+    radio = False
 
     def __init__(self,*args, **kwargs):
         """initialize the select widget wich an optional set of fixed options"""
@@ -125,6 +127,8 @@ class Select(Widget):
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
 
+        del attrs['radio']
+
         if attrs['multiple'] is None:
             del attrs['multiple']
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
@@ -143,13 +147,27 @@ class Select(Widget):
                 a = v = elem
             else:
                 a,v = elem
-            if str(a) in value:
-                items.append('<option selected="selected" value="%s">%s</option>' %(werkzeug.escape(a, True),v))
+            pl = {
+                'val' : werkzeug.escape(a, True),
+                'label' : v,
+                'name' : self.name,
+                'id' : "%s-%s" %(self.name, werkzeug.escape(a,True))
+            }
+            if self.radio:
+                if str(a) in value:
+                    items.append('<span><input type="radio" checked name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
+                else:
+                    items.append('<span><input type="radio" name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
             else:
-                items.append('<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)))
+                if str(a) in value:
+                    items.append('<option selected="selected" value="%s">%s</option>' %(werkzeug.escape(a, True),v))
+                else:
+                    items.append('<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)))
         items = "\n".join(items)
-
-        return u"<select {0}>{1}</select>".format(attrs, items)
+        if self.radio:
+            return '<div class="radiorows">%s</div>' %items
+        else:
+            return u"<select {0}>{1}</select>".format(attrs, items)
 
     def from_form(self, form):
         """check if the value is an empty string or missing and raise an
