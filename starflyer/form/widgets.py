@@ -158,7 +158,7 @@ class Select(Widget):
             v = form.request.form.getlist(self.name)
         else:
             v = form.request.form.get(self.name)
-        if len(v)==0:
+        if len(v)==0 and self.required:
             raise Error('required', self.messages['required'])
         return v
 
