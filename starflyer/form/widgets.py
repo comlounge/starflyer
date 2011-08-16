@@ -98,10 +98,10 @@ class Select(Widget):
     assume it to be retrieved from ``self.form.options[widget.name]()``"""
 
     css_class="widget widget-select"
-    ATTRS = ['multiple', 'radio']
-    INSTANCE_ATTRS = ['radio']
+    ATTRS = ['multiple', 'checkboxes']
+    INSTANCE_ATTRS = ['checkboxes']
     multiple = False
-    radio = False
+    checkboxes = False
 
     def __init__(self,*args, **kwargs):
         """initialize the select widget wich an optional set of fixed options"""
@@ -127,7 +127,7 @@ class Select(Widget):
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
 
-        del attrs['radio']
+        del attrs['checkboxes']
 
         if attrs['multiple'] is None:
             del attrs['multiple']
@@ -153,19 +153,19 @@ class Select(Widget):
                 'name' : self.name,
                 'id' : "%s-%s" %(self.name, werkzeug.escape(a,True))
             }
-            if self.radio:
+            if self.checkboxes:
                 if str(a) in value:
-                    items.append('<span><input type="radio" checked name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
+                    items.append('<span><input type="checkbox" checked name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
                 else:
-                    items.append('<span><input type="radio" name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
+                    items.append('<span><input type="checkbox" name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
             else:
                 if str(a) in value:
                     items.append('<option selected="selected" value="%s">%s</option>' %(werkzeug.escape(a, True),v))
                 else:
                     items.append('<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)))
         items = "\n".join(items)
-        if self.radio:
-            return '<div class="radiorows">%s</div>' %items
+        if self.checkboxes:
+            return '<div class="checkrows">%s</div>' %items
         else:
             return u"<select {0}>{1}</select>".format(attrs, items)
 
