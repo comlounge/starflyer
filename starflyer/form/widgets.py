@@ -89,7 +89,33 @@ class Checkbox(Widget):
     css_class="widget widget-checkbox"
     type="checkbox"
 
-    # TODO: make it do something, e.g. set checked
+
+    def render(self, context):
+        """render this widget."""
+
+        # create the select field
+        attrs = {}
+        for a in self.BASE_ATTRS+self.ATTRS:
+            attrs[a] = getattr(self, a)
+        attrs.update(self.additional)
+        attrs['class'] = attrs['css_class']
+        del attrs["css_class"]
+
+        print attrs
+
+        value = self.get_widget_value(context.form)
+        if value:
+            attrs['checked']="checked"
+        attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
+        attrs = " ".join(attrs)
+        return u"<input {0}>".format(attrs)
+
+    def from_form(self, form):
+        """return True or False depending whether it is checked or not"""
+        v = form.request.form.get(self.name)
+        if v is None:
+            return False
+        return True
 
 class Select(Widget):
     """a select widget. In order to work this widget also needs
