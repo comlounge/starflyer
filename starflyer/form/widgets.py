@@ -155,7 +155,7 @@ class Select(Widget):
 
         del attrs['checkboxes']
 
-        if attrs['multiple'] is None:
+        if not attrs['multiple']:
             del attrs['multiple']
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
         attrs = " ".join(attrs)
