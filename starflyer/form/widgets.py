@@ -2,6 +2,7 @@ from core import Widget, no_value
 from starflyer.processors import Error
 import werkzeug
 import datetime
+import types
 
 __all__ = ['Text', 'Password', 'Email', 'URL', 'File', 'DatePicker', 'Checkbox', 
            'Select', 'Textarea', 'Input']
@@ -77,7 +78,6 @@ class DatePicker(Text):
         """convert a value coming from python to be used in a form by this widget.
         This can e.g. be splitting a date in date, month and year fields. A ``RenderContext``
         needs to be passed in ``ctx``"""
-        print "ok"
         v = super(DatePicker, self).get_widget_value(form)
         if isinstance(v, datetime.datetime):
             return v.strftime(self.format)
@@ -89,24 +89,6 @@ class Checkbox(Widget):
     css_class="widget widget-checkbox"
     type="checkbox"
 
-    # TODO: make it do something, e.g. set checked
-
-class Select(Widget):
-    """a select widget. In order to work this widget also needs
-    a source for the options to display. As this list might be dynamically
-    we cannot pass it to the ``Widget`` constructor but instead we will
-    assume it to be retrieved from ``self.form.options[widget.name]()``"""
-
-    css_class="widget widget-select"
-    ATTRS = ['multiple']
-    multiple = None
-
-    def __init__(self,*args, **kwargs):
-        """initialize the select widget wich an optional set of fixed options"""
-        self.options = kwargs.get('options', None)
-        if kwargs.has_key("options"):
-            del kwargs['options']
-        super(Select, self).__init__(*args, **kwargs)
 
     def render(self, context):
         """render this widget."""
@@ -119,7 +101,61 @@ class Select(Widget):
         attrs['class'] = attrs['css_class']
         del attrs["css_class"]
 
-        if attrs['multiple'] is None:
+        print attrs
+
+        value = self.get_widget_value(context.form)
+        if value:
+            attrs['checked']="checked"
+        attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
+        attrs = " ".join(attrs)
+        return u"<input {0}>".format(attrs)
+
+    def from_form(self, form):
+        """return True or False depending whether it is checked or not"""
+        v = form.request.form.get(self.name)
+        if v is None:
+            return False
+        return True
+
+class Select(Widget):
+    """a select widget. In order to work this widget also needs
+    a source for the options to display. As this list might be dynamically
+    we cannot pass it to the ``Widget`` constructor but instead we will
+    assume it to be retrieved from ``self.form.options[widget.name]()``"""
+
+    css_class="widget widget-select"
+    ATTRS = ['multiple', 'checkboxes']
+    INSTANCE_ATTRS = ['checkboxes']
+    multiple = False
+    checkboxes = False
+
+    def __init__(self,*args, **kwargs):
+        """initialize the select widget wich an optional set of fixed options"""
+        self.options = kwargs.get('options', None)
+        if kwargs.has_key("options"):
+            del kwargs['options']
+        super(Select, self).__init__(*args, **kwargs)
+        if "multiple" in kwargs:
+            self.multiple = kwargs['multiple']
+
+    def render(self, context):
+        """render this widget."""
+
+        value = self.get_widget_value(context.form)
+        if type(value) not in (types.ListType, types. TupleType):
+            value = [value]
+
+        # create the select field
+        attrs = {}
+        for a in self.BASE_ATTRS+self.ATTRS:
+            attrs[a] = getattr(self, a)
+        attrs.update(self.additional)
+        attrs['class'] = attrs['css_class']
+        del attrs["css_class"]
+
+        del attrs['checkboxes']
+
+        if not attrs['multiple']:
             del attrs['multiple']
         attrs = ['%s="%s"' %(a,werkzeug.escape(v, True)) for a,v in attrs.items()]
         attrs = " ".join(attrs)
@@ -131,10 +167,44 @@ class Select(Widget):
                 options = options()
         else:
             options = self.options
-        options = ['<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)) for a,v in options]
-        options = "\n".join(options)
+        items = []
+        for elem in options:
+            if type(elem) in (types.UnicodeType, types.StringType):
+                a = v = elem
+            else:
+                a,v = elem
+            pl = {
+                'val' : werkzeug.escape(a, True),
+                'label' : v,
+                'name' : self.name,
+                'id' : "%s-%s" %(self.name, werkzeug.escape(a,True))
+            }
+            if self.checkboxes:
+                if str(a) in value:
+                    items.append('<span><input type="checkbox" checked name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
+                else:
+                    items.append('<span><input type="checkbox" name="%(name)s" value="%(val)s" id="%(id)s"><label for="%(id)s">%(label)s</label></span>' %pl)
+            else:
+                if str(a) in value:
+                    items.append('<option selected="selected" value="%s">%s</option>' %(werkzeug.escape(a, True),v))
+                else:
+                    items.append('<option value="%s">%s</option>' %(werkzeug.escape(a, True),werkzeug.escape(v, True)))
+        items = "\n".join(items)
+        if self.checkboxes:
+            return '<div class="checkrows">%s</div>' %items
+        else:
+            return u"<select {0}>{1}</select>".format(attrs, items)
 
-        return u"<select {0}>{1}</select>".format(attrs, options)
+    def from_form(self, form):
+        """check if the value is an empty string or missing and raise an
+        exception in case it is required."""
+        if self.multiple:
+            v = form.request.form.getlist(self.name)
+        else:
+            v = form.request.form.get(self.name)
+        if v is not None and len(v)==0 and self.required:
+            raise Error('required', self.messages['required'])
+        return v
 
 class Textarea(Widget):
     """a select widget. In order to work this widget also needs
@@ -181,6 +251,5 @@ class Search(Text):
     
     def render(self, *args, **kwargs):
         tag = super(Search, self).render(*args, **kwargs)
-        print tag
         search_button = "<img src=/img/search_button_green.png>"
         return '{0} {1}'.format(tag, search_button)
