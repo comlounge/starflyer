@@ -79,10 +79,12 @@ class Handler(object):
         tmpl = self.settings.templates.get_template(tmplname)
         return tmpl.render(**params)
 
-    def redirect(self, location, code=302):
+    def redirect(self, location, code=302, cookies={}):
         """redirect to ``location``"""
         redirect = exceptions.Redirect(location, code=code)
         redirect.response.set_cookie('m', self._encode_messages(self.messages_out))
+        for a,v in cookies.items():
+            redirect.response.set_cookie(a, v)
         return redirect
         
     def handle(self, **m):
