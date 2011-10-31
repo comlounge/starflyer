@@ -57,10 +57,13 @@ class Submapper(object):
 class Application(object):
     """a base class for dispatching WSGI requests"""
     
-    def __init__(self, settings={}, prefix=""):
-        """initialize the Application with a settings dictionary and an optional
-        ``prefix`` if this is a sub application"""
-        self.settings = settings
+    def __init__(self, config):
+        """initialize the Application 
+
+        :param config: a ``Configuration`` instance
+        """
+        self.config = config
+        self.settings = config.settings
         self.view_mappings = {} # endpoint -> handler
         self.url_map = Mapper()
         self.mapper = routes.Mapper()
@@ -96,7 +99,7 @@ class Application(object):
                 try:
                     handler = handler_cls(app=self, 
                                 request=request, 
-                                settings=self.settings, 
+                                config=self.config, 
                                 args = args,
                                 log=Logger(self.settings.log_name),
                                 url_generator = self.url_map.generator(environ))
@@ -112,4 +115,12 @@ class Application(object):
         return NestedSetup([
             handler,
         ])
-        
+
+def app_factory(**local_conf):
+    """the app factory will create the WSGI application and wrap them with
+    a SharedDataMiddleware wrapper for serving static data
+    """
+    config = setup.setup(**local_conf)
+    app = App(config)                                                                                                                                                   
+    return werkzeug.wsgi.SharedDataMiddleware(app, config._static_map)
+

@@ -17,7 +17,7 @@ class Handler(object):
     def __init__(self, 
             app=None, 
             request=None, 
-            settings={}, 
+            config={}, 
             args = {},
             log=None, 
             url_generator=None):
@@ -26,7 +26,7 @@ class Handler(object):
         
         :param app: The ``Application`` instance this handler belongs to
         :param request: The request object
-        :param settings: The global settings dict
+        :param config: The global configuration dict
         :param args: The arguments returned by the matched route
         :param log: A logbook ``Logger`` instance 
         :param url_generator: The url generator we use 
@@ -34,7 +34,7 @@ class Handler(object):
         
         self.app = app
         self.request = request
-        self.settings = settings
+        self.config = config
         self.log = log            
         self.args = args
         self.url_generator = url_generator
@@ -47,7 +47,7 @@ class Handler(object):
         """overwrite this method if you need auth handling etc. This method
         will be called before calling the actual method. You can set here
         additional instance variable etc. if you need them and you have access
-        to ``self.request``, ``self.settings`` and ``self.app``."""
+        to ``self.request``, ``self.config`` and ``self.app``."""
         pass
 
     def url_for(self, name, force_external = False, append_unknown=False, **kwargs):
@@ -76,7 +76,7 @@ class Handler(object):
         params['url_for'] = self.url_for
         params['flash_messages'] = self.messages_in+self.messages_out
         self.messages_out = []
-        tmpl = self.settings.templates.get_template(tmplname)
+        tmpl = self.config.templates.main.get_template(tmplname)
         return tmpl.render(**params)
 
     def redirect(self, location, code=302, cookies={}):
@@ -122,10 +122,10 @@ class Handler(object):
    
     def _decode_messages(self, cookies):
         if cookies.has_key('m'):
-            m = SecureCookie.unserialize(cookies['m'], self.settings.cookie_secret)
+            m = SecureCookie.unserialize(cookies['m'], self.config.settings.cookie_secret)
             return m.get('msg', [])
         return []
     
     def _encode_messages(self, messages):
-        c = SecureCookie({'msg': messages}, self.settings.cookie_secret)
+        c = SecureCookie({'msg': messages}, self.config.settings.cookie_secret)
         return c.serialize()
