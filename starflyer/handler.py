@@ -100,8 +100,7 @@ class Handler(object):
 
         # decode messages for transfer
         self.messages_in = self._decode_messages(self.request.cookies)
-        #self.log.debug("calling method %s on handler '%s' " %(self.request.method, m['handler']))
-        #del m['handler']
+        self.log.debug("calling method %s on handler '%s' " %(self.request.method, self))
 
         # call the handler
         getattr(self, method)(**m)
