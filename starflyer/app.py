@@ -67,7 +67,7 @@ def run(global_config, **local_config):
     # TODO: take ini file into account
     config = setup(**local_config)
     app = config.app(config)
-    if local_config.get('debug', 'false') == 'true':
+    if local_config.get('development', 'false').lower() == 'true':
         from werkzeug.debug import DebuggedApplication
         app = DebuggedApplication(app)
     return werkzeug.wsgi.SharedDataMiddleware(app, config._static_map)
