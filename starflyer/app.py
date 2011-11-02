@@ -59,14 +59,6 @@ class Application(object):
             handler,
         ])
 
-def app_factory(**local_conf):
-    """the app factory will create the WSGI application and wrap them with
-    a SharedDataMiddleware wrapper for serving static data
-    """
-    config = setup.setup(**local_conf)
-    app = config.app(config)
-    return werkzeug.wsgi.SharedDataMiddleware(app, config._static_map)
-
 def run(global_config, **local_config):
     """run the application"""
     group = 'starflyer.config'
