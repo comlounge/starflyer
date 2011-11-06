@@ -1,5 +1,6 @@
 import werkzeug
 import pkg_resources
+import urlparse
 from logbook import Logger, FileHandler, NestedSetup, Processor
 from werkzeug.routing import Map, Rule, NotFound, Submount, RequestRedirect
 
@@ -14,6 +15,7 @@ class Application(object):
         :param config: a ``Configuration`` instance
         """
         self.config = config
+        self.config.finalize()
         self.settings = config.settings
 
     def __call__(self, environ, start_response):
@@ -64,8 +66,24 @@ def run(global_config, **local_config):
     group = 'starflyer.config'
     entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
     setup = entrypoint.load()
+
     # TODO: take ini file into account
     config = setup(**local_config)
+
+    # run additional configurators
+    for cf_entrypoint in local_config.get("configurators", "").split(" "):
+        parts = urlparse.urlparse(cf_entrypoint)
+        if parts.scheme!="egg":
+            continue
+        if "#" in parts.path:
+            package, name = parts.path.split("#") 
+        else:
+            package = parts.path
+            name = "default"
+        entry = pkg_resources.get_entry_info(package, "starflyer.config", name)
+        setup_func = entry.load()
+        config = setup_func(config)
+
     app = config.app(config)
     if local_config.get('development', 'false').lower() == 'true':
         from werkzeug.debug import DebuggedApplication
