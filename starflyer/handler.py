@@ -71,9 +71,11 @@ class Handler(object):
         params.update(kwargs)
         params = self.prepare_render(params)
         params['values'] = values
+        params['settings'] = self.config.settings
         params['errors'] = errors
         params['url'] = self.request.path
         params['url_for'] = self.url_for
+        params['snippets'] = self.config.snippets
         params['flash_messages'] = self.messages_in+self.messages_out
         self.messages_out = []
         tmpl = self.config.templates.main.get_template(tmplname)

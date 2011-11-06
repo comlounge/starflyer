@@ -1,15 +1,59 @@
 from starflyer import AttributeMapper, Application
 from werkzeug.routing import Map, Rule, NotFound, Submount, RequestRedirect
 from logbook import Logger, FileHandler, NestedSetup, Processor
+import jinja2
 
 __all__ = ['Configuration']
+
+
+class SnippetChain(list):
+    """a list of snippets but with the possibility to render it"""
+
+    def __call__(self, *args, **kwargs):
+        """call all snippet chain. This will call all the snippet providers with the given arguments.
+        The application must define for itself which parameters are passed for which chain.
+        """
+        out = []
+        for provider in self:
+            out.append(provider(*args, **kwargs))
+        return "\n".join(out)
+
+class Routes(list):
+    """a list of routes which will be postprocessed later to create a routing map.
+
+    In phase one we will only collect routes as 3-tuples though.
+
+    Each tuple consists of:
+
+    :param path: the url pattern which matches the path. See werkzeug docs for how to construct it.
+    :param endpoint: a unique name for this rule which can be used later again to construct a URL
+    :param handler: The handler class to be used if this path matches
+
+    """
+
+    def create_map(self, virtual_path=None):
+        """create a map from the stored routes taking an optional virtual path in account"""
+
+        # rulify the routes
+        rules = []
+        views = {}
+        for path, endpoint, handler in self:
+            rules.append(Rule(path, endpoint=endpoint))
+            views[endpoint] = handler
+
+        # now eventually prefix the map if a virtual path is given
+        if virtual_path is not None:
+            map = Map([Submount(virtual_path, rules)])
+        else:
+            map = Map(rules)
+        return Mapper(map, views)
 
 class Mapper(object):
     """a mapper which is able to map url routes to handlers"""
 
-    def __init__(self):
-        self.url_map = Map()
-        self.views = {}
+    def __init__(self, map, views):
+        self.url_map = map
+        self.views = views
 
     def add(self, path, endpoint, handler):
         self.url_map.add(Rule(path, endpoint=endpoint))
@@ -30,7 +74,6 @@ class Mapper(object):
         """attach a submapper to us"""
         self.url_map.add(submapper.url_map)
         self.views.update(submapper.views)
-
 
 class Submapper(object):
     """a mapper for sub modules which mainly delegates"""
@@ -76,15 +119,37 @@ class Configuration(AttributeMapper):
         super(AttributeMapper, self).__init__(*args, **kwargs)
 
         # create predefined sections
-        self.templates = AttributeMapper()
-        self.settings = AttributeMapper()
+        self.templates = AttributeMapper() # a mapping of names to template loader chains
+        self.hooks = AttributeMapper() # a mapping from hook names to hook functions
+        self.settings = AttributeMapper() # generic settings attributes
+        self.routes = Routes() # basically a list of routing tuples
+        self.snippets = AttributeMapper() # holds snippets to be used in templates. Each entry is a list mapping from a snippet name to a list of snippets
 
         # initialize default logging which might be overridden by ``register_logger()``
         self.register_default_log_handler()
 
         # initialize maps
         self._static_map = {}
-        self._url_map = Mapper()
+
+    def register_snippet_names(self, *names):
+        """register a list of names for snippets which can be used in templates later on"""
+        for name in names:
+            self.snippets[name] = SnippetChain()
+
+    def register_template_chains(self, *chains):
+        """register different template loader chains. Each template chain can be
+        modified by plugins and can be used for different purposes, e.g. one chain
+        for web user, one for email use.
+
+        After initializing the chains you can then simply add loaders to them, e.g.
+
+        config.register_template_chains("main")
+        config.templates.main.append(FileSystemLoader('/path/to/user/templates'))
+
+        :param chains: A list of names of template chains
+        """
+        for chain in chains:
+            self.templates[chain] = []
 
     def register_sections(self, *sections):
         """extend the configuration object by adding new sections to structure configuration more.
@@ -102,14 +167,14 @@ class Configuration(AttributeMapper):
         """
         self.settings.update(data)
 
-    def register_paths(self, *paths):
-        """register url paths
+    def register_handlers(self, *paths):
+        """register handlers which are attached to URL patterns
         
         :param paths: A list of tuples consisting of ``path``, ``endpoint`` and ``handler`` to be registered
             with ``register_path()``
         """
         for path, endpoint, handler in paths:
-            self.register_path(path, endpoint, handler)
+            self.register_handler(path, endpoint, handler)
 
     def register_static_path(self, url_path, file_path):
         """register a static file path to be used for serving static file via a middleware.
@@ -124,8 +189,13 @@ class Configuration(AttributeMapper):
         """
         self._static_map[url_path] = file_path
 
-    def register_path(self, path, endpoint, handler):
-        """add a rule to the view mapper"""
+    def register_handler(self, path, endpoint, handler):
+        """register a handler for a given url pattern
+
+        :param path: the url pattern which matches the path. See werkzeug docs for how to construct it.
+        :param endpoint: a unique name for this rule which can be used later again to construct a URL
+        :param handler: The handler class to be used if this path matches
+        """
         self._url_map.add(path, endpoint, handler)
 
     def register_default_log_handler(self):
@@ -134,6 +204,18 @@ class Configuration(AttributeMapper):
         self.log_handler = NestedSetup([
             #handler,
         ])
+
+    def finalize(self):
+        """finalize the configuration object. This method is called after all 
+        plugins have been able to modify the config. Here we then finalize template
+        loaders etc.
+        """
+
+        # fixup templates
+        for name, chain in self.templates.items():
+            self.templates[name] = jinja2.Environment(loader = jinja2.ChoiceLoader(chain))
+
+        self._url_map = self.routes.create_map(virtual_path = self.settings.virtual_path)
 
 
 
