@@ -168,15 +168,6 @@ class Configuration(AttributeMapper):
         """
         self.settings.update(data)
 
-    def register_handlers(self, *paths):
-        """register handlers which are attached to URL patterns
-        
-        :param paths: A list of tuples consisting of ``path``, ``endpoint`` and ``handler`` to be registered
-            with ``register_path()``
-        """
-        for path, endpoint, handler in paths:
-            self.register_handler(path, endpoint, handler)
-
     def register_static_path(self, url_path, file_path):
         """register a static file path to be used for serving static file via a middleware.
         When extending a configuration you can add your own paths here which then will be setup
@@ -189,15 +180,6 @@ class Configuration(AttributeMapper):
                 file_path = os.path.join(static_file_path, 'css')
         """
         self._static_map[url_path] = file_path
-
-    def register_handler(self, path, endpoint, handler):
-        """register a handler for a given url pattern
-
-        :param path: the url pattern which matches the path. See werkzeug docs for how to construct it.
-        :param endpoint: a unique name for this rule which can be used later again to construct a URL
-        :param handler: The handler class to be used if this path matches
-        """
-        self._url_map.add(path, endpoint, handler)
 
     def register_default_log_handler(self):
         """register the default logger in case nothing else is registered """
