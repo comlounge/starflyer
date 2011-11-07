@@ -1,4 +1,5 @@
 from starflyer import AttributeMapper, Application
+from events import Events
 from werkzeug.routing import Map, Rule, NotFound, Submount, RequestRedirect
 from logbook import Logger, FileHandler, NestedSetup, Processor
 import jinja2
@@ -120,7 +121,7 @@ class Configuration(AttributeMapper):
 
         # create predefined sections
         self.templates = AttributeMapper() # a mapping of names to template loader chains
-        self.hooks = AttributeMapper() # a mapping from hook names to hook functions
+        self.events = Events() # a mapping from event names to a list of event handlers
         self.settings = AttributeMapper() # generic settings attributes
         self.routes = Routes() # basically a list of routing tuples
         self.snippets = AttributeMapper() # holds snippets to be used in templates. Each entry is a list mapping from a snippet name to a list of snippets
@@ -216,6 +217,11 @@ class Configuration(AttributeMapper):
             self.templates[name] = jinja2.Environment(loader = jinja2.ChoiceLoader(chain))
 
         self._url_map = self.routes.create_map(virtual_path = self.settings.virtual_path)
+
+        # call the finalize handlers
+        self.events.handle("starflyer.config.finalize:after", self)
+
+
 
 
 

@@ -31,4 +31,5 @@ from app import Application, run
 from handler import Handler
 from decorators import *
 from config import * 
+from events import * 
 import exceptions
