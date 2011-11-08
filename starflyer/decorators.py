@@ -72,8 +72,9 @@ class render(object):
 
 class asjson(object):
     
-    def __init__(self, **headers):
+    def __init__(self, cls=None, **headers):
         self.headers = {}
+        self.cls = cls
         for a,v in headers.items():
             ps = a.split("_")
             ps = [p.capitalize() for p in ps]
@@ -87,7 +88,10 @@ class asjson(object):
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             data = method(self, *args, **kwargs)
-            s = json.dumps(data, default = jsonconverter)
+            if that.cls is not None:
+                s = json.dumps(data, default = jsonconverter)
+            else:
+                s = json.dumps(data, cls = that.cls)
             if self.request.args.has_key("callback"):
                 callback = self.request.args.get("callback")
                 s = "%s(%s)" %(callback, s)
