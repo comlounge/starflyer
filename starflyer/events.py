@@ -13,7 +13,6 @@ class Events(object):
         """
         self.handlers.setdefault(name, []).append(handler)
 
-
     def handle(self, name, config, **kw):
         """handle an event by calling all registered handlers for it
 
