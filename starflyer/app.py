@@ -1,81 +1,28 @@
 import werkzeug
-import routes
+import pkg_resources
+import urlparse
 from logbook import Logger, FileHandler, NestedSetup, Processor
 from werkzeug.routing import Map, Rule, NotFound, Submount, RequestRedirect
 
 import handler
 
-
-class Mapper(object):
-    """a mapper which is able to map url routes to handlers"""
-
-    def __init__(self):
-        self.url_map = Map()
-        self.views = {}
-
-    def add(self, path, endpoint, handler):
-        self.url_map.add(Rule(path, endpoint=endpoint))
-        self.views[endpoint] = handler
-
-    def map(self, environ):
-        """maps an environment to a handler. Returns the handler object
-        and the args. If it does not match, ``(None, None)`` is returned.
-        """
-        urls = self.url_map.bind_to_environ(environ)
-        endpoint, args = urls.match()
-        return self.views.get(endpoint, None), args
-
-    def generator(self, environ):
-        return self.url_map.bind_to_environ(environ)
-
-    def add_submapper(self, submapper):
-        """attach a submapper to us"""
-        self.url_map.add(submapper.url_map)
-        self.views.update(submapper.views)
-
-
-class Submapper(object):
-    """a mapper for sub modules which mainly delegates"""
-
-    def __init__(self, path):
-        self.url_map = Submount(path, [])
-        self.views = {}
-
-    def add(self, path, endpoint, handler):
-        self.add_rule(Rule(path, endpoint=endpoint))
-        self.add_view(endpoint, handler)
-
-    def add_rule(self, rule):
-        """add a Rule instance to the map"""
-        self.url_map.rules.append(rule)
-
-    def add_view(self, endpoint, handler):
-        """add a mapping between one endpoint and a handler"""
-        self.views[endpoint] = handler
-
-
 class Application(object):
     """a base class for dispatching WSGI requests"""
     
-    def __init__(self, settings={}, prefix=""):
-        """initialize the Application with a settings dictionary and an optional
-        ``prefix`` if this is a sub application"""
-        self.settings = settings
-        self.view_mappings = {} # endpoint -> handler
-        self.url_map = Mapper()
-        self.mapper = routes.Mapper()
-        self.setup_handlers(self.mapper)
-        self.loghandler = self.setup_logger()
+    def __init__(self, config):
+        """initialize the Application 
 
-    def add_rule(self, path, endpoint, handler):
-        """add a rule to the view mapper"""
-        self.url_map.add(path, endpoint, handler)
+        :param config: a ``Configuration`` instance
+        """
+        self.config = config
+        self.config.finalize()
+        self.settings = config.settings
 
     def __call__(self, environ, start_response):
         request = werkzeug.Request(environ)
         
         try:
-            handler_cls, args = self.url_map.map(environ)
+            handler_cls, args = self.config._url_map.map(environ)
         except RequestRedirect, e:
             return e(environ, start_response)
         except NotFound:
@@ -92,14 +39,15 @@ class Application(object):
             # TODO: add a hook for adding more information
 
         with Processor(inject):
-            with self.loghandler.threadbound():
+            log_name = self.settings.get("log_name", "")
+            with self.config.log_handler.threadbound():
                 try:
                     handler = handler_cls(app=self, 
                                 request=request, 
-                                settings=self.settings, 
+                                config=self.config, 
                                 args = args,
-                                log=Logger(self.settings.log_name),
-                                url_generator = self.url_map.generator(environ))
+                                log=Logger(log_name),
+                                url_generator = self.config._url_map.generator(environ))
                     return handler.handle(**args)(environ, start_response)
                 except werkzeug.exceptions.HTTPException, e:
                     return e(environ, start_response)
@@ -112,4 +60,34 @@ class Application(object):
         return NestedSetup([
             handler,
         ])
-        
+
+def run(global_config, **local_config):
+    """run the application"""
+    group = 'starflyer.config'
+    entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
+    setup = entrypoint.load()
+
+    # TODO: take ini file into account
+    config = setup(**local_config)
+
+    # run additional configurators
+    for cf_entrypoint in local_config.get("configurators", "").split(" "):
+        parts = urlparse.urlparse(cf_entrypoint)
+        if parts.scheme!="egg":
+            continue
+        if "#" in parts.path:
+            package, name = parts.path.split("#") 
+        else:
+            package = parts.path
+            name = "default"
+        entry = pkg_resources.get_entry_info(package, "starflyer.config", name)
+        setup_func = entry.load()
+        config = setup_func(config)
+
+    app = config.app(config)
+    if local_config.get('development', 'false').lower() == 'true':
+        from werkzeug.debug import DebuggedApplication
+        app = DebuggedApplication(app)
+    return werkzeug.wsgi.SharedDataMiddleware(app, config._static_map)
+
+
