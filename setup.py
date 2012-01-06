@@ -27,5 +27,7 @@ setup(name='starflyer',
         "jinja2",
       ],
       entry_points="""
+      [console_scripts]
+      server = starflyer.scripts:run
       """,
       )
