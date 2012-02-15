@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import daemon
 import pkg_resources
 import werkzeug.serving
 
@@ -13,21 +14,103 @@ class WebsiteRunner(object):
                    help='the config file to read')
         self.parser.add_argument('-r', action="store_true", help='use reloader')
         self.parser.add_argument('-d', action="store_true", help='use debugger')
+        self.parser.add_argument('-b', action="store_true", help='run in background')
 
         self.args = self.parser.parse_args()
         self.config = yaml.load(self.args.config_file[0].read())
 
-        # read app
-        group = 'starflyer_app_factory'
-        entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
-        self.app = entrypoint.load()(**self.config['app'])
-        
+        # extract the config section which consists of a python package name and the name of an entry point
+        # in the group starflyer.config. If name is not given, we use default
+        self.app_section = self.config['app']
+        self.server_section = self.config['server']
+        self.config_section = self.config['config']
+
+
+        # now retrieve the setup method we need to use. This is in the app section
+        # and there inside the ``setup`` key as ``package:name`` format
+        setup_string = self.app_section['setup']
+
+        # extract the application package and entry point name
+        parts = setup_string.split(":")
+        package = parts[0]
+        if len(parts)>1:
+            name = parts[1]
+        else:
+            name = "default"
+
+        # get the distribution object
+        dist = pkg_resources.get_distribution(package)
+        setup_method = dist.load_entry_point("starflyer.config", name)
+
+        self.app_config = setup_method(**self.config_section)
+        self.app = self.app_config.app(self.app_config)
+
     def run(self):
-        port = self.config['website']['port']
-        werkzeug.serving.run_simple('localhost', port, self.app, 
-            use_reloader=self.args.r,
-            use_debugger=self.args.d)
+        port = self.server_section.get('port', 8888)
+        host = self.server_section.get('host', '127.0.0.1')
+
+        if self.args.b:
+            pidfile = None
+            if self.server_section.has_option("main", "pidfile"):
+                path = self.server_section.get("main", "pidfile")
+                pidfile=lockfile.FileLock(path)
+            with daemon.DaemonContext(pidfile=pidfile):                                                                                                                                          
+                werkzeug.serving.run_simple(host, port, self.app,
+                    use_reloader=self.args.r,
+                    use_debugger=self.args.d)
+        else:
+            werkzeug.serving.run_simple('localhost', port, self.app, 
+                use_reloader=self.args.r,
+                use_debugger=self.args.d)
+
+class ScriptBase(object):
+    """handler for running a script under a certain context. Simply
+    derive from this class and add a ``__call__()`` method."""
+
+    description = "run a dummy script"
+
+    def __init__(self):
+        """initialize the script runner with the arg parser etc."""
+        self.parser = argparse.ArgumentParser(description=self.description)
+        self.parser.add_argument('config_file', metavar='CONFIG', type=file, nargs=1,
+                   help='the config file to use for this script')
+
+        self.args = self.parser.parse_args()
+        self.config = yaml.load(self.args.config_file[0].read())
+
+
+
+        # read app
+        group = 'starflyer_setup'
+        entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
+        self.settings = entrypoint.load()(**self.config['app'])
         
+    def __call__(self): 
+        print "please override this method to run a script within settings %s " %self.settings
+
+def get_app():
+    """load and configure an application from a config file
+
+    A config file can look as follows::
+
+        app:
+            app = package:main
+            config = package:config
+
+        config:
+            key = value
+            key = value
+
+    The important bit here is the [app] section which holds the application to instantiate and the configuration method to use.
+    If no config is given then the default configuration inside applications's package is used. 
+
+    ``package`` here is a dotted python package name which needs to be loadable by setuptools or distribute 
+    and contain at least an [starflyer.app_factory] entry point with an entry point named ``default`` pointing to an application
+    constructor.
+    
+    """
+
+    
 
 
 def run():

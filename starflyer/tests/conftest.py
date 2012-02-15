@@ -1,5 +1,6 @@
 from starflyer import Handler, Application, AttributeMapper
 from starflyer import ashtml, asjson
+from starflyer import exceptions
 import werkzeug
 
 
@@ -15,6 +16,14 @@ class TestHandler3(Handler):
     def get(self, id=''):
         return werkzeug.Response(str(id))
 
+class RedirectHandler(Handler):
+    """test handler for redirects"""
+    def get(self):
+        url = "/huhu"
+        redirect = exceptions.Redirect(location=url)
+        raise redirect
+    
+
     
 class App1(Application):
 
@@ -22,6 +31,7 @@ class App1(Application):
         map.connect(None, "/", handler=TestHandler1)
         map.connect(None, "/huhu", handler=TestHandler2)
         map.connect(None, "/post/{id}", handler=TestHandler3)
+        map.connect(None, "/redirect", handler=RedirectHandler)
 
 def pytest_funcarg__settings(request):
     td = request.getfuncargvalue('tmpdir')
