@@ -49,17 +49,19 @@ class WebsiteRunner(object):
         port = self.server_section.get('port', 8888)
         host = self.server_section.get('host', '127.0.0.1')
 
+        app = werkzeug.wsgi.SharedDataMiddleware(self.app, self.app_config._static_map)
+
         if self.args.b:
             pidfile = None
             if self.server_section.has_option("main", "pidfile"):
                 path = self.server_section.get("main", "pidfile")
                 pidfile=lockfile.FileLock(path)
             with daemon.DaemonContext(pidfile=pidfile):                                                                                                                                          
-                werkzeug.serving.run_simple(host, port, self.app,
+                werkzeug.serving.run_simple(host, port, app,
                     use_reloader=self.args.r,
                     use_debugger=self.args.d)
         else:
-            werkzeug.serving.run_simple('localhost', port, self.app, 
+            werkzeug.serving.run_simple('localhost', port, app, 
                 use_reloader=self.args.r,
                 use_debugger=self.args.d)
 

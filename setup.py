@@ -25,6 +25,7 @@ setup(name='starflyer',
         "pyyaml",
         "argparse",
         "jinja2",
+        "python-daemon",
       ],
       entry_points="""
       [console_scripts]

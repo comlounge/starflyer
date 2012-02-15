@@ -63,9 +63,9 @@ class Application(object):
 
 def run(global_config, **local_config):
     """run the application"""
-    #group = 'starflyer.config'
-    #entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
-    #setup = entrypoint.load()
+    group = 'starflyer.config'
+    entrypoint = list(pkg_resources.iter_entry_points(group=group, name="default"))[0]
+    setup = entrypoint.load()
 
     # TODO: take ini file into account
     config = setup(**local_config)
