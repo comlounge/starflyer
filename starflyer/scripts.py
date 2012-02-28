@@ -12,9 +12,8 @@ class ScriptBase(object):
         self.parser = argparse.ArgumentParser(description='run a webserver')
         self.parser.add_argument('config_file', metavar='CONFIG', type=file, nargs=1,
                    help='the config file to read')
-        self.parser.add_argument('-r', action="store_true", help='use reloader')
-        self.parser.add_argument('-d', action="store_true", help='use debugger')
-        self.parser.add_argument('-b', action="store_true", help='run in background')
+
+        self.extend_parser()
 
         self.args = self.parser.parse_args()
         self.config = yaml.load(self.args.config_file[0].read())
@@ -44,6 +43,9 @@ class ScriptBase(object):
 
         self.config = setup_method(**self.config_section)
         self.settings = self.config.settings
+
+    def extend_parser(self):
+        """hook for extending the parser by adding new parameters"""
 
 class WebsiteRunner(object):
     """handler for running a website"""
