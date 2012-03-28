@@ -32,6 +32,7 @@ class Handler(object):
         :param url_generator: The url generator we use 
         """
         
+        config.events.handle("starflyer.handler.initialize:before", config, handler=self)
         self.app = app
         self.request = request
         self.config = config
@@ -42,6 +43,7 @@ class Handler(object):
         self.messages_in = []
         self.response = werkzeug.wrappers.Response()
         self.prepare() # hook for handling auth etc.
+        config.events.handle("starflyer.handler.initialize:after", config, handler=self)
 
     def prepare(self):
         """overwrite this method if you need auth handling etc. This method
