@@ -77,7 +77,6 @@ class Mapper(object):
         return self.views.get(endpoint, None), args
 
     def generator(self, environ):
-        print "genarator", self.server_name
         return self.url_map.bind_to_environ(environ, server_name = self.server_name, subdomain = self.subdomain)
 
     def add_submapper(self, submapper):
