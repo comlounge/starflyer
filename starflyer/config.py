@@ -32,7 +32,7 @@ class Routes(list):
 
     """
 
-    def create_map(self, virtual_path=None):
+    def create_map(self, virtual_path=None, subdomain = None, server_name = None):
         """create a map from the stored routes taking an optional virtual path in account"""
 
         # rulify the routes
@@ -47,14 +47,22 @@ class Routes(list):
             map = Map([Submount(virtual_path, rules)])
         else:
             map = Map(rules)
-        return Mapper(map, views)
+        return Mapper(map, views, server_name = server_name, subdomain = subdomain)
 
 class Mapper(object):
     """a mapper which is able to map url routes to handlers"""
 
-    def __init__(self, map, views):
+    def __init__(self, map, views, server_name=None, subdomain = None):
+        """initialize the Mapper object with a URL map and a views dictionary
+
+        Optionally you can pass in a ``server_name`` or ``subdomain`` which will 
+        be used in URL generation. Check the werkzeug ``bind_to_environ()`` documentation
+        on how it is used"""
+
         self.url_map = map
         self.views = views
+        self.server_name = server_name
+        self.subdomain = subdomain
 
     def add(self, path, endpoint, handler):
         self.url_map.add(Rule(path, endpoint=endpoint))
@@ -69,7 +77,8 @@ class Mapper(object):
         return self.views.get(endpoint, None), args
 
     def generator(self, environ):
-        return self.url_map.bind_to_environ(environ)
+        print "genarator", self.server_name
+        return self.url_map.bind_to_environ(environ, server_name = self.server_name, subdomain = self.subdomain)
 
     def add_submapper(self, submapper):
         """attach a submapper to us"""
@@ -198,7 +207,10 @@ class Configuration(AttributeMapper):
         for name, chain in self.templates.items():
             self.templates[name] = jinja2.Environment(loader = jinja2.ChoiceLoader(chain))
 
-        self._url_map = self.routes.create_map(virtual_path = self.settings.virtual_path)
+        server_name = self.settings.get("server_name", None)
+        subdomain = self.settings.get("subdomain", None)
+        vpath = self.settings.get("virtual_path", "/" )
+        self._url_map = self.routes.create_map(virtual_path = vpath, server_name = server_name, subdomain = subdomain)
 
         # call the finalize handlers
         self.events.handle("starflyer.config.finalize:after", self)
