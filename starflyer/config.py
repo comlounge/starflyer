@@ -3,6 +3,7 @@ from events import Events
 from werkzeug.routing import Map, Rule, NotFound, Submount, RequestRedirect
 from logbook import Logger, FileHandler, NestedSetup, Processor
 import jinja2
+import urlparse
 
 __all__ = ['Configuration']
 
@@ -32,7 +33,7 @@ class Routes(list):
 
     """
 
-    def create_map(self, virtual_path=None, subdomain = None, server_name = None):
+    def create_map(self, virtual_path=None, subdomain = None, vhost = None):
         """create a map from the stored routes taking an optional virtual path in account"""
 
         # rulify the routes
@@ -42,17 +43,20 @@ class Routes(list):
             rules.append(Rule(path, endpoint=endpoint))
             views[endpoint] = handler
 
+        if vhost is not None:
+            virtual_path = vhost.path
+
         # now eventually prefix the map if a virtual path is given
         if virtual_path is not None:
             map = Map([Submount(virtual_path, rules)])
         else:
             map = Map(rules)
-        return Mapper(map, views, server_name = server_name, subdomain = subdomain)
+        return Mapper(map, views, subdomain = subdomain, vhost = vhost)
 
 class Mapper(object):
     """a mapper which is able to map url routes to handlers"""
 
-    def __init__(self, map, views, server_name=None, subdomain = None):
+    def __init__(self, map, views, subdomain = None, vhost = None):
         """initialize the Mapper object with a URL map and a views dictionary
 
         Optionally you can pass in a ``server_name`` or ``subdomain`` which will 
@@ -61,8 +65,8 @@ class Mapper(object):
 
         self.url_map = map
         self.views = views
-        self.server_name = server_name
         self.subdomain = subdomain
+        self.vhost = vhost
 
     def add(self, path, endpoint, handler):
         self.url_map.add(Rule(path, endpoint=endpoint))
@@ -77,7 +81,18 @@ class Mapper(object):
         return self.views.get(endpoint, None), args
 
     def generator(self, environ):
-        return self.url_map.bind_to_environ(environ, server_name = self.server_name, subdomain = self.subdomain)
+        if self.vhost is None:
+            return self.url_map.bind_to_environ(environ, subdomain = self.subdomain)
+        else:
+            scheme = self.vhost.scheme
+            server_name = self.vhost.netloc
+
+            return self.url_map.bind(server_name, environ.get('SCRIPT_NAME'),
+                        self.subdomain, scheme,
+                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
+                        query_args=environ.get('QUERY_STRING', ''))
+        
+            return self.url_map.bind(environ, subdomain = self.subdomain)
 
     def add_submapper(self, submapper):
         """attach a submapper to us"""
@@ -205,11 +220,16 @@ class Configuration(AttributeMapper):
         # fixup templates
         for name, chain in self.templates.items():
             self.templates[name] = jinja2.Environment(loader = jinja2.ChoiceLoader(chain))
+        
+        # virtual host can define schema, host and also path
+        virtual_host = self.settings.get("virtual_host", None)
+        vhost = None
+        if virtual_host is not None:
+            vhost = urlparse.urlparse(virtual_host) # a vhost is the result of an url parse call
 
-        server_name = self.settings.get("server_name", None)
         subdomain = self.settings.get("subdomain", None)
         vpath = self.settings.get("virtual_path", "/" )
-        self._url_map = self.routes.create_map(virtual_path = vpath, server_name = server_name, subdomain = subdomain)
+        self._url_map = self.routes.create_map(virtual_path = vpath, subdomain = subdomain, vhost = vhost)
 
         # call the finalize handlers
         self.events.handle("starflyer.config.finalize:after", self)
