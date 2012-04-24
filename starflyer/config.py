@@ -76,7 +76,15 @@ class Mapper(object):
         """maps an environment to a handler. Returns the handler object
         and the args. If it does not match, ``(None, None)`` is returned.
         """
-        urls = self.url_map.bind_to_environ(environ)
+        if self.vhost is None:
+            urls = self.url_map.bind_to_environ(environ)
+        else:
+            scheme = self.vhost.scheme
+            server_name = self.vhost.netloc
+            urls = self.url_map.bind(server_name, environ.get('SCRIPT_NAME'),
+                        self.subdomain, scheme,
+                        environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
+                        query_args=environ.get('QUERY_STRING', ''))
         endpoint, args = urls.match()
         return self.views.get(endpoint, None), args
 
@@ -86,13 +94,10 @@ class Mapper(object):
         else:
             scheme = self.vhost.scheme
             server_name = self.vhost.netloc
-
             return self.url_map.bind(server_name, environ.get('SCRIPT_NAME'),
                         self.subdomain, scheme,
                         environ['REQUEST_METHOD'], environ.get('PATH_INFO'),
                         query_args=environ.get('QUERY_STRING', ''))
-        
-            return self.url_map.bind(environ, subdomain = self.subdomain)
 
     def add_submapper(self, submapper):
         """attach a submapper to us"""
