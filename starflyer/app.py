@@ -13,7 +13,8 @@ import jinja2
 from werkzeug.datastructures import ImmutableDict
 
 import sessions
-from . import AttributeMapper
+import static
+from helpers import AttributeMapper
 
 class URL(object):
     """proxy object for a URL rule in order to be used more easily in route listings"""
@@ -40,9 +41,9 @@ class Application(object):
     error_handlers = {} # mapping from error code to error handler classes
 
     # directory and URL endpoint setup
-    template_dir = "templates/"
-    static_dir = "static/"
-    static_url = "static/"
+    template_folder = "templates/"
+    static_folder   = "static/"
+    static_url_path = "/static"
 
     # class to be used for URL Routes
     url_rule_class = werkzeug.routing.Rule
@@ -70,6 +71,7 @@ class Application(object):
         'propagate_exceptions'          : None,
         'debug'                         : False,
         'testing'                       : False,
+        'static_cache_timeout'          : 12 * 60 * 60,
     }
 
     jinja_options = ImmutableDict(
@@ -102,7 +104,11 @@ class Application(object):
 
         # we did not have any request yet
         self._got_first_request = False
-    
+
+        self.add_url_rule(self.static_url_path + '/<path:filename>',
+                          endpoint='static',
+                          handler=static.StaticFileHandler)
+
     
     ####
     #### hooks for first request, finalizing and error handling
