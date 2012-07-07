@@ -127,11 +127,11 @@ class SessionInterface(object):
         """Helpful helper method that returns the cookie domain that should
         be used for the session cookie if session cookies are used.
         """
-        if app.config['SESSION_COOKIE_DOMAIN'] is not None:
-            return app.config['SESSION_COOKIE_DOMAIN']
-        if app.config['SERVER_NAME'] is not None:
+        if app.config.get('session_cookie_domain') is not None:
+            return app.config.session_cookie_domain
+        if app.config.get('server_name') is not None:
             # chop of the port which is usually not supported by browsers
-            return '.' + app.config['SERVER_NAME'].rsplit(':', 1)[0]
+            return '.' + app.config.server_name.rsplit(':', 1)[0]
 
     def get_cookie_path(self, app):
         """Returns the path for which the cookie should be valid.  The
@@ -139,21 +139,21 @@ class SessionInterface(object):
         config var if it's set, and falls back to ``APPLICATION_ROOT`` or
         uses ``/`` if it's `None`.
         """
-        return app.config['SESSION_COOKIE_PATH'] or \
-               app.config['APPLICATION_ROOT'] or '/'
+        return app.config.get('session_cookie_path') or \
+               app.config.get('application_root') or '/'
 
     def get_cookie_httponly(self, app):
         """Returns True if the session cookie should be httponly.  This
-        currently just returns the value of the ``SESSION_COOKIE_HTTPONLY``
+        currently just returns the value of the ``session_cookie_httponly``
         config var.
         """
-        return app.config['SESSION_COOKIE_HTTPONLY']
+        return app.config.get('session_cookie_httponly', False)
 
     def get_cookie_secure(self, app):
         """Returns True if the cookie should be secure.  This currently
-        just returns the value of the ``SESSION_COOKIE_SECURE`` setting.
+        just returns the value of the ``session_cookie_secure`` setting.
         """
-        return app.config['SESSION_COOKIE_SECURE']
+        return app.config.get('session_cookie_secure', False)
 
     def get_expiration_time(self, app, session):
         """A helper method that returns an expiration date for the session
@@ -162,7 +162,7 @@ class SessionInterface(object):
         lifetime configured on the application.
         """
         if session.permanent:
-            return datetime.utcnow() + app.permanent_session_lifetime
+            return datetime.utcnow() + app.config.permanent_session_lifetime
 
     def open_session(self, app, request):
         """This method has to be implemented and must either return `None`
@@ -188,10 +188,10 @@ class SecureCookieSessionInterface(SessionInterface):
     session_class = SecureCookieSession
 
     def open_session(self, app, request):
-        key = app.config.secret_key
+        key = app.config.get('secret_key', None)
         if key is not None:
             return self.session_class.load_cookie(request,
-                                                  app.session_cookie_name,
+                                                  app.config.session_cookie_name,
                                                   secret_key=key)
 
     def save_session(self, app, session, response):
@@ -201,9 +201,9 @@ class SecureCookieSessionInterface(SessionInterface):
         httponly = self.get_cookie_httponly(app)
         secure = self.get_cookie_secure(app)
         if session.modified and not session:
-            response.delete_cookie(app.session_cookie_name, path=path,
+            response.delete_cookie(app.config.session_cookie_name, path=path,
                                    domain=domain)
         else:
-            session.save_cookie(response, app.session_cookie_name, path=path,
+            session.save_cookie(response, app.config.session_cookie_name, path=path,
                                 expires=expires, httponly=httponly,
                                 secure=secure, domain=domain)

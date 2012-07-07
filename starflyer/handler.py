@@ -1,11 +1,7 @@
 import os
 import copy
 import json
-from paste.fileapp import FileApp
 import werkzeug.exceptions
-from paste.auth import auth_tkt
-from decorators import ashtml
-from werkzeug.contrib.securecookie import SecureCookie
 import exceptions
 import starflyer
 
@@ -14,7 +10,7 @@ class Handler(object):
 
     template="" # default template to use
     
-    def __init__(self, app, request=None, url_adapter=None):
+    def __init__(self, app, request):
             
         """initialize the Handler with the calling application and the request
         it has to handle.
@@ -27,7 +23,7 @@ class Handler(object):
         self.app = app
         self.request = request
         self.config = app.config
-        self.url_adapter = url_adapter
+        self.url_adapter = request.url_adapter
         self.flashes = None
         self.session = None
 
@@ -83,9 +79,9 @@ class Handler(object):
                 messages and ``'warning'`` for warnings.  However any
                 kind of string can be used as category.
         """
-        flashes = self.session.get('_flashes', [])
+        flashes = self.session.get('flashes', [])
         flashes.append((category, msg))
-        self.session['_flashes'] = flashes
+        self.session['flashes'] = flashes
 
     def get_flashes(self, with_categories=False, category_filter=[]):
         """Pulls all flashed messages from the session and returns them.
@@ -112,7 +108,7 @@ class Handler(object):
         """        
     
         session = self.session
-        flashes = session.pop('_flashes') if '_flashes' in session else []
+        flashes = session.pop('flashes') if 'flashes' in session else []
         if category_filter:
             flashes = filter(lambda f: f[0] in category_filter, flashes)
         if not with_categories:
@@ -234,7 +230,7 @@ class Handler(object):
                 rv = self.app.response_class(rv, headers=headers, status=status)
                 headers = status = None
             else:
-                rv = self.app.response_class.force_type(rv, request.environ)
+                rv = self.app.response_class.force_type(rv, self.request.environ)
 
         if status is not None:
             if isinstance(status, basestring):

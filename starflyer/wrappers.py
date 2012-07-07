@@ -45,6 +45,10 @@ class Request(RequestBase):
     #: something similar.
     routing_exception = None
 
+    #: this is the url adapter being used
+    #: we store it here so we do not have to pass it around all the time.
+    url_adapter = None
+
     @property
     def endpoint(self):
         """The endpoint that matched the request.  This in combination with

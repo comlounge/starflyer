@@ -27,7 +27,7 @@ class AttributeMapper(dict):
 
 
 
-from app import Application, URL, run
+from app import Application, URL
 from handler import Handler
 from decorators import *
 from config import * 
