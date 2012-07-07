@@ -5,10 +5,13 @@ import werkzeug.exceptions
 import exceptions
 import starflyer
 
+
+
 class Handler(object):
     """a request handler which is also the base class for an application"""
 
     template="" # default template to use
+
     
     def __init__(self, app, request):
             
@@ -115,24 +118,50 @@ class Handler(object):
             return [x[1] for x in flashes]
         return flashes
 
+    
+    ####
+    #### URL MANAGEMENT
+    ####
+
     def url_for(self, name, _full = False, _append=False, **kwargs):
         """return a URL generated from the mapper"""
-        return self.url_adapter.build(
+        return self.request.url_adapter.build(
                 name, 
                 kwargs, 
                 force_external = _full, 
                 append_unknown = _append)
 
+
     ####
     #### RENDER RELATED
     ####
 
-    def prepare_render(self, params):
+    @property
+    def default_render_context(self):
+        """return the default template rendering environment"""
+        return dict(
+            handler = self,
+            request = self.request,
+            session = self.session,
+            config = self.config,
+        )
+
+    @property
+    def template_globals(self):
+        """return global variables to be used inside a template."""
+        return dict(
+            url_for = self.url_for,
+            get_flashes = self.get_flashes
+        )
+
+    @property
+    def render_context(self):
         """provide attributes to a to template to be rendered by adding
         it to the provided ``params`` dictionary and returning it.
         """
-        return params
-    
+        return dict()
+
+
     def render(self, tmplname=None, values={}, errors={}, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
         this template otherwise take the default ``self.template``. You can
@@ -140,19 +169,12 @@ class Handler(object):
         if tmplname is None:
             tmplname = self.template
 
-        params = starflyer.AttributeMapper()
+        params = starflyer.AttributeMapper(self.default_render_context)
+        params.update(self.render_context)
         params.update(kwargs)
-        params = self.prepare_render(params)
-        params['values'] = values
-        params['settings'] = self.config.settings
-        params['errors'] = errors
-        params['url'] = self.request.path
-        params['url_for'] = self.url_for
-        params['snippets'] = self.config.snippets
-        params['flash_messages'] = self.messages_in+self.messages_out
-        self.messages_out = []
-        tmpl = self.config.templates.main.get_template(tmplname)
+        tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)
         return tmpl.render(**params)
+
 
     def redirect(self, location, code=302, cookies={}):
         """redirect to ``location``"""

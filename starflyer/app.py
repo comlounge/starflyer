@@ -8,6 +8,9 @@ import sys
 import logbook
 import wrappers
 import werkzeug
+import jinja2
+
+from werkzeug.datastructures import ImmutableDict
 
 import sessions
 from . import AttributeMapper
@@ -25,6 +28,8 @@ class URL(object):
 
 class Application(object):
     """a base class for dispatching WSGI requests"""
+
+    import_name = None
     
     defaults = {
         'secret_key' : os.urandom(24)
@@ -67,6 +72,10 @@ class Application(object):
         'testing'                       : False,
     }
 
+    jinja_options = ImmutableDict(
+        extensions=['jinja2.ext.autoescape', 'jinja2.ext.with_']
+    )
+    
 
     def __init__(self, config={}, **kw):
         """initialize the Application 
@@ -108,6 +117,29 @@ class Application(object):
         """with this hook you can do something very generic to a response after all processing."""
         return response
 
+    ####
+    #### TEMPLATE related
+    ####
+
+    def create_global_jinja_loader(self):
+        """create the global jinja template loader"""
+        if self.template_dir is not None:
+            return jinja2.PackageLoader(self.import_name, self.template_dir)
+        return None
+
+    # TODO: cache it!
+    @property
+    def jinja_env(self):
+        """create the jinja environment"""
+        options = dict(self.jinja_options)
+        if 'loader' not in options:
+            options['loader'] = self.create_global_jinja_loader()
+        #if 'autoescape' not in options:
+            #options['autoescape'] = self.select_jinja_autoescape
+        rv = jinja2.Environment(**options)
+        #rv.filters['tojson'] = _tojson_filter
+        return rv
+        
 
     ####
     #### SESSION related
@@ -169,9 +201,7 @@ class Application(object):
         """Returns the value of the `propagate_exceptions` configuration
         value in case it's set, otherwise a sensible default is returned.
         """
-        print 1
         rv = self.config.propagate_exceptions
-        print rv
         if rv is not None:
             return rv
         return self.config.testing or self.config.debug
@@ -196,18 +226,19 @@ class Application(object):
         """
 
         # create the url adapter
-        urls = self.url_map.bind_to_environ(environ)
+        urls = self.url_map.bind_to_environ(request.environ)
 
         try:
             url_rule, request.view_args = urls.match(return_rule=True)
             request.url_rule = url_rule
+            request.url_adapter = urls
         except werkzeug.exceptions.HTTPException, e:
             # this basically means 404 but maybe some debugging can occur
             # this is reraised then though
             self.raise_routing_exception(request, e)
 
         # try to find the right handler for this url and instantiate it
-        return self.handlers[url_rule.endpoint](self, request, urls)
+        return self.handlers[url_rule.endpoint](self, request)
 
 
     def process_request(self, request):
@@ -231,6 +262,7 @@ class Application(object):
             
             
         # use the log context to actually call the handler
+        handler = None
         with logbook.Processor(inject):
             try:
                 # find the handler and call it
@@ -239,7 +271,7 @@ class Application(object):
             except Exception, e:
                 response = self.handle_user_exception(request, e)
 
-        if not self.session_interface.is_null_session(handler.session):
+        if handler and not self.session_interface.is_null_session(handler.session):
             self.save_session(handler.session, response)
 
         return self.finalize_response(response) # hook for post processing a resposne
@@ -298,7 +330,7 @@ class Application(object):
 
         .. versionadded:: 0.3
         """
-        if handlers and e.code in self.error_handlers:
+        if self.error_handlers and e.code in self.error_handlers:
             handler = self.error_handlers[e.code]
         else:
             return e
