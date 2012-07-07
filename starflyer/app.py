@@ -109,6 +109,8 @@ class Application(object):
                           endpoint='static',
                           handler=static.StaticFileHandler)
 
+        # now call the hook for changing the setup after initialization
+        self.finalize_setup()
     
     ####
     #### hooks for first request, finalizing and error handling
@@ -123,18 +125,24 @@ class Application(object):
         """with this hook you can do something very generic to a response after all processing."""
         return response
 
+    def finalize_setup(self):
+        """a hook you can use to finalize the setup. You can add new routes, change configuration
+        values etc.
+        """
+
     ####
     #### TEMPLATE related
     ####
 
     def create_global_jinja_loader(self):
         """create the global jinja template loader"""
-        if self.template_dir is not None:
-            return jinja2.PackageLoader(self.import_name, self.template_dir)
+        if self.template_folder is not None:
+            return jinja2.PackageLoader(self.import_name, self.template_folder)
         return None
 
+
     # TODO: cache it!
-    @property
+    @werkzeug.cached_property
     def jinja_env(self):
         """create the jinja environment"""
         options = dict(self.jinja_options)
