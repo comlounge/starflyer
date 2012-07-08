@@ -1,5 +1,5 @@
 from starflyer import Handler, Application, AttributeMapper
-from starflyer import ashtml, asjson
+from starflyer import asjson
 from starflyer import exceptions
 import werkzeug
 
@@ -51,24 +51,6 @@ def pytest_funcarg__client1(request):
     return werkzeug.Client(app1, werkzeug.BaseResponse)
 
 
-
-class DecoratorHandler(Handler):
-    """test handler for decorator tests"""
-
-    c = 17 
-
-    @ashtml()
-    def html(self):
-        return "foobar"
-
-    @asjson()
-    def json(self, a,b):
-        return {'a': a, 'b': b, 'c': self.c}
-
-def pytest_funcarg__handler(request):
-
-    app1 = request.getfuncargvalue('app1')
-    return DecoratorHandler(app1, werkzeug.Request({}))
 
 
 

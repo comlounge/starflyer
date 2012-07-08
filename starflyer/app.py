@@ -33,7 +33,6 @@ class Application(object):
     import_name = None
     
     defaults = {
-        'secret_key' : os.urandom(24)
     }
 
     routes = [] # list of rules
@@ -87,7 +86,7 @@ class Application(object):
 
         self.url_map = werkzeug.routing.Map()
         self.handlers = {}
-
+        
         self.config = AttributeMapper(self.enforced_defaults or {})
         self.config.update(self.defaults)
         self.config.update(config)
@@ -105,7 +104,11 @@ class Application(object):
         # we did not have any request yet
         self._got_first_request = False
 
-        self.add_url_rule(self.static_url_path + '/<path:filename>',
+        # clean up static url path
+        sup = self.static_url_path
+        if sup.endswith("/"):
+            sup = sup[:-1]
+        self.add_url_rule(sup+ '/<path:filename>',
                           endpoint='static',
                           handler=static.StaticFileHandler)
 
@@ -418,7 +421,7 @@ class Application(object):
         :internal:
         """
         if not self.config.debug \
-           or not isinstance(request.routing_exception, werkzeug.exceptions.RequestRedirect) \
+           or not isinstance(request.routing_exception, werkzeug.routing.RequestRedirect) \
            or request.method in ('GET', 'HEAD', 'OPTIONS'):
             raise exception
 
