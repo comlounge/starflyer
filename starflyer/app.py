@@ -32,12 +32,12 @@ class Application(object):
 
     import_name = None
     
-    defaults = {
-    }
+    defaults = {}
 
     routes = [] # list of rules
-    handlers = {} # mapping from endpoint to handler classes
     error_handlers = {} # mapping from error code to error handler classes
+
+    handlers = {} # mapping from endpoint to handler classes
 
     # directory and URL endpoint setup
     template_folder = "templates/"
@@ -52,6 +52,7 @@ class Application(object):
 
     # response class to use
     response_class = wrappers.Response
+    request_class = wrappers.Request
 
     # enforeced defaults (these have to be existent in the config
     # for starflyer to work (DO NOT CHANGE!)
@@ -133,6 +134,7 @@ class Application(object):
         values etc.
         """
 
+
     ####
     #### TEMPLATE related
     ####
@@ -144,7 +146,6 @@ class Application(object):
         return None
 
 
-    # TODO: cache it!
     @werkzeug.cached_property
     def jinja_env(self):
         """create the jinja environment"""
@@ -296,7 +297,7 @@ class Application(object):
     
     def __call__(self, environ, start_response):
         """do WSGI request dispatching"""
-        request = wrappers.Request(environ)
+        request = self.request_class(environ)
         try:
             response = self.process_request(request)
         except Exception, e:
@@ -445,7 +446,7 @@ class Application(object):
 
         .. admonition:: Keep in Mind
 
-           Flask will suppress any server error with a generic error page
+           starflyer will suppress any server error with a generic error page
            unless it is in debug mode.  As such to enable just the
            interactive debugger without the code reloading, you have to
            invoke :meth:`run` with ``debug=True`` and ``use_reloader=False``.

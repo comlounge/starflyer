@@ -9,17 +9,21 @@ from StringIO import StringIO
 class TestApplication(Application):
     """our test application to check configuration"""
 
+    import_name = __name__
+
     template_folder = "test_templates/"
     static_folder = "static_folder/"
     static_url_path = "/assets/"
 
-    import_name = __name__
-
     defaults = {
-        'debug'             : True, 
-        'title'             : "foobar",
-        'description'       : "barfoo",
+        'debug'                 : True, 
+        'title'                 : "foobar",
+        'description'           : "barfoo",
+        'preferred_url_scheme'  : "https",
     }
+
+    def finalize_setup(self):
+        self.config.description = "barfoo2"
 
 def pytest_funcarg__app(request):
     return TestApplication()
@@ -45,8 +49,33 @@ def test_static_url_path_override(app):
     assert response.data == "TEST\n"
 
 
+def test_jinja_options_override(app):
+    app.jinja_options = dict(app.jinja_options)
+    app.jinja_options['cache_size'] = 100 # just for checking
+
+    assert app.jinja_env.cache.capacity == 100
+
     
+def test_jinja_environment_is_cached(app):
+    assert app.jinja_env.cache.capacity == 50
+
+    app.jinja_options = dict(app.jinja_options)
+    app.jinja_options['cache_size'] = 100 # just for checking
     
+    assert app.jinja_env.cache.capacity == 50
+
+def test_defaults(app):
+    assert app.config.title == "foobar"
+
+def test_config_override(app):
+    assert app.config.description == "barfoo2"
+
+def test_enforced_defaults(app):
+    assert app.config.session_cookie_name == "s"
+
+def test_enforced_defaults_override(app):
+    assert app.config.preferred_url_scheme == "https"
+
 
 
 """
@@ -54,8 +83,6 @@ def test_static_url_path_override(app):
 - check different response class
 - check different request class
 - check different session interface
-- check enforced defaults
-- check jinja options
 - check first request
 - check finalize response
 

@@ -175,16 +175,6 @@ class Handler(object):
         tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)
         return tmpl.render(**params)
 
-
-    def redirect(self, location, code=302, cookies={}):
-        """redirect to ``location``"""
-        redirect = exceptions.Redirect(location, code=code)
-        redirect.response.set_cookie('m', self._encode_messages(self.messages_out))
-        for a,v in cookies.items():
-            redirect.response.set_cookie(a, v)
-        return redirect
-
-        
     def __call__(self, **m):
         """handle a single request. This means checking the method to use,
         looking up the method for it and calling it. We have to return a WSGI

@@ -6,3 +6,4 @@ from events import *
 from scripts import ScriptBase 
 from wrappers import Request, Response
 import exceptions
+from werkzeug import redirect

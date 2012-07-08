@@ -31,4 +31,11 @@ def test_path_params(client1):
     assert resp.data == "33"
 
         
+def test_redirect(client1):
+
+    resp = client1.get('/redirect', follow_redirects = True)
+    assert resp.status=="200 OK"
+    assert resp.data == "test2"
+
+        
     

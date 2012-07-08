@@ -1,50 +1,43 @@
-from starflyer import Handler, Application, AttributeMapper
-from starflyer import asjson
+from starflyer import Handler, Application, AttributeMapper, URL, redirect
 from starflyer import exceptions
 import werkzeug
+import starflyer
 
 
 class TestHandler1(Handler):
+
     def get(self):
-        return werkzeug.Response("test1")
+        return "test1"
 
 class TestHandler2(Handler):
+
     def get(self):
-        return werkzeug.Response("test2")
+        return "test2"
 
 class TestHandler3(Handler):
+
     def get(self, id=''):
-        return werkzeug.Response(str(id))
+        return str(id)
 
 class RedirectHandler(Handler):
     """test handler for redirects"""
-    def get(self):
-        url = "/huhu"
-        redirect = exceptions.Redirect(location=url)
-        raise redirect
-    
 
+    def get(self):
+        return redirect(self.url_for("huhu"))
     
 class App1(Application):
 
-    def setup_handlers(self, map):
-        map.connect(None, "/", handler=TestHandler1)
-        map.connect(None, "/huhu", handler=TestHandler2)
-        map.connect(None, "/post/{id}", handler=TestHandler3)
-        map.connect(None, "/redirect", handler=RedirectHandler)
+    import_name = __name__
 
-def pytest_funcarg__settings(request):
-    td = request.getfuncargvalue('tmpdir')
-    return AttributeMapper({
-        'log_filename' : str(td.join("log")),
-        'log_name' : "test",
-        'foo' : 'bar'
-    })
-
+    routes = [
+        URL("/",            "index",        TestHandler1),
+        URL("/huhu",        "huhu",         TestHandler2),
+        URL("/post/<id>",   "post",         TestHandler3),
+        URL("/redirect",    "redirect",     RedirectHandler),
+    ]
 
 def pytest_funcarg__app1(request):
-    settings = request.getfuncargvalue('settings')
-    return App1(settings)
+    return App1()
     
 def pytest_funcarg__client1(request):
     app1 = request.getfuncargvalue('app1')
