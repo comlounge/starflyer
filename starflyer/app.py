@@ -8,6 +8,7 @@ import sys
 import logbook
 import wrappers
 import werkzeug
+import werkzeug.test
 import jinja2
 
 from werkzeug.datastructures import ImmutableDict
@@ -126,7 +127,13 @@ class Application(object):
 
 
     def finalize_response(self, response):
-        """with this hook you can do something very generic to a response after all processing."""
+        """with this hook you can do something very generic to a response after all processing.
+        
+        Please not that the response can also be an :class:`~werkzeug.exception.HTTPException` instance
+        which does not have a status code. 
+
+        TODO: Shall we only do finalize on non-exception responses?
+        """
         return response
 
     def finalize_setup(self):
@@ -300,7 +307,7 @@ class Application(object):
         request = self.request_class(environ)
         try:
             response = self.process_request(request)
-        except Exception, e:
+        except Exception, e:    
             response = self.handle_exception(request, e)
         return response(environ, start_response)
         
@@ -422,13 +429,40 @@ class Application(object):
         :internal:
         """
         if not self.config.debug \
-           or not isinstance(request.routing_exception, werkzeug.routing.RequestRedirect) \
+           or not isinstance(exception, werkzeug.routing.RequestRedirect) \
            or request.method in ('GET', 'HEAD', 'OPTIONS'):
             raise exception
 
         from .helpers import FormDataRoutingRedirect
         raise FormDataRoutingRedirect(request, exception)
 
+    ####
+    #### testing helper
+    ####
+
+    def make_request(self, **options):
+        """create a request based on the given options. Those options are the same
+        parameters which you can give to :class:`~werkzeug.test.EnvironmentBuilder`.
+        
+        Most common are probably the ``path`` and ``method`` parameters
+
+        :return: an instance of the request class configured for the application instance.
+        """
+        builder = werkzeug.test.EnvironBuilder(**options)
+        env = builder.get_environ()
+        return self.request_class(env)
+
+    def run_request(self, **options):
+        """run a request through the application. This method will run it only through
+        the actual request processing and will return a ``Response`` instance and not
+        a HTTP response. The WSGI stack is not used in this case.
+
+        :param options: Options for the :class:`~werkzeug.test.EnvironBuilder`
+        """
+        request = self.make_request(**options)
+        return self.process_request(request)
+
+        
 
     ####
     #### WSGI runner for development

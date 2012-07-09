@@ -62,7 +62,8 @@ class FormDataRoutingRedirect(AssertionError):
                    'with form data reliably or without user interaction.' %
                    request.method)
         buf.append('\n\nNote: this exception is only raised in debug mode')
-        AssertionError.__init__(self, ''.join(buf).encode('utf-8'))                                                                                                                              
+        # TODO: This is not working with py.test due to the assertion error 
+        super(AssertionError, self).__init__(''.join(buf).encode('utf-8'))                                                                                                                              
 
 class AttributeMapper(dict):
     """a dictionary like object which also is accessible via getattr/setattr"""

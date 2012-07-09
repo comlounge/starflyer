@@ -162,7 +162,7 @@ class Handler(object):
         return dict()
 
 
-    def render(self, tmplname=None, values={}, errors={}, **kwargs):
+    def render(self, tmplname=None, **kwargs):
         """render a template. If the ``tmplname`` is given, it will render
         this template otherwise take the default ``self.template``. You can
         pass in kwargs which are then passed to the template on rendering."""

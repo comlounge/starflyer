@@ -79,12 +79,7 @@ def test_enforced_defaults_override(app):
 
 
 """
-- check different url rule class
-- check different response class
-- check different request class
 - check different session interface
-- check first request
-- check finalize response
 
 
 """
