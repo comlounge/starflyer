@@ -12,6 +12,7 @@ import werkzeug.test
 import jinja2
 
 from werkzeug.datastructures import ImmutableDict
+from wsgiref.util import shift_path_info
 
 import sessions
 import static
@@ -304,6 +305,9 @@ class Application(object):
     
     def __call__(self, environ, start_response):
         """do WSGI request dispatching"""
+        spi = int(self.config.get("shift_path_info", 0))
+        for i in range(0,spi):
+            shift_path_info(environ)
         request = self.request_class(environ)
         try:
             response = self.process_request(request)
