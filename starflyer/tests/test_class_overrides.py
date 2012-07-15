@@ -24,8 +24,6 @@ class TestHandler(Handler):
 class TestApplication(Application):
     """our test application to check configuration"""
 
-    import_name = __name__
-
     request_class = TestRequest
     response_class = TestResponse
     url_rule_class = URLRuleClass
@@ -41,7 +39,7 @@ class TestApplication(Application):
 
 
 def pytest_funcarg__app(request):
-    return TestApplication()
+    return TestApplication(__name__)
 
 def pytest_funcarg__client(request):
     app = request.getfuncargvalue('app')

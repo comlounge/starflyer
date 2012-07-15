@@ -9,8 +9,6 @@ from StringIO import StringIO
 class TestApplication(Application):
     """our test application to check configuration"""
 
-    import_name = __name__
-
     template_folder = "test_templates/"
     static_folder = "static_folder/"
     static_url_path = "/assets/"
@@ -26,7 +24,7 @@ class TestApplication(Application):
         self.config.description = "barfoo2"
 
 def pytest_funcarg__app(request):
-    return TestApplication()
+    return TestApplication(__name__)
 
 def test_template_folder_override(app):
     assert app.template_folder == "test_templates/"

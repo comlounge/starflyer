@@ -32,8 +32,6 @@ class URL(object):
 class Application(object):
     """a base class for dispatching WSGI requests"""
 
-    import_name = None
-    
     defaults = {}
 
     routes = [] # list of rules
@@ -81,22 +79,30 @@ class Application(object):
     )
     
 
-    def __init__(self, config={}, **kw):
+    def __init__(self, import_name, config={}, **kw):
         """initialize the Application 
 
+        :param import_name: the __name__ of the module we are running under.
         :param config: a dictionary of configuration values
         """
 
+        self.import_name = import_name
+
+        # initialize URL mapping variables
         self.url_map = werkzeug.routing.Map()
         self.handlers = {}
-        
+       
+        # initialize configuration
         self.config = AttributeMapper(self.enforced_defaults or {})
         self.config.update(self.defaults)
         self.config.update(config)
         self.config.update(kw)
-
         # TODO: update from environment vars?
         
+
+        # TODO: Do we want sub application support? If so, add here.
+       
+        # initialize the actual routes 
         for route in self.routes:
             self.add_url_rule(
                 route.path,
@@ -110,7 +116,9 @@ class Application(object):
         # clean up static url path
         sup = self.static_url_path
         if sup.endswith("/"):
-            sup = sup[:-1]
+            sup = sup[:-1] # remove any trailing slash
+        if not sup.startswith("/"):
+            sup = "/"+sup # add a leading slash if missing
         self.add_url_rule(sup+ '/<path:filename>',
                           endpoint='static',
                           handler=static.StaticFileHandler)

@@ -11,6 +11,7 @@ class MyErrorHandler(Handler):
 class BrokenHandler(Handler):
 
     def get(self):
+        # call something which leads to an error
         return broken()
 
 class FlashHandler(Handler):
@@ -89,8 +90,6 @@ class CheckSessionHandler(Handler):
     
 class TestApplication(Application):
 
-    import_name = __name__
-
     error_handlers = {
         500: MyErrorHandler,
     }
@@ -121,7 +120,7 @@ class TestApplication(Application):
         
 
 def pytest_funcarg__app(request):
-    return TestApplication()
+    return TestApplication(__name__)
 
 def pytest_funcarg__session_handler(request):
     app = request.getfuncargvalue('app')
