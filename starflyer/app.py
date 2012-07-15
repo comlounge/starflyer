@@ -125,6 +125,11 @@ class Application(object):
 
         # now call the hook for changing the setup after initialization
         self.finalize_setup()
+
+        # TODO: maybe we can use import_name to provide some configuration override where
+        # you call it in a different module. Then again maybe not so useful if you also have
+        # to provide template etc. then. So maybe a different local config file loading is
+        # more useful, e.g. via ini-file
     
     ####
     #### hooks for first request, finalizing and error handling
