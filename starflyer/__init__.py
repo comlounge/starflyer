@@ -12,7 +12,7 @@ class AttributeMapper(dict):
 
     def __getattr__(self, k):
         """retrieve some data from the dict"""
-        if self.has_key(k):
+        if k in self:
             return self[k]
         raise AttributeError(k)
 
