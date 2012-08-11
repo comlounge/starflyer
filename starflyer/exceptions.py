@@ -6,9 +6,28 @@ to pass in a customizable payload
 this is partly flask and partly own code
 """
 
+__all__ = ['ConfigurationError']
+
 import werkzeug.wrappers
 import werkzeug.exceptions
 from .helpers import json
+
+
+class StarflyerException(Exception):
+    """Base class for starflyer exceptions"""
+
+    def __init__(self, msg):
+        """initialize the exception"""
+        self.msg = msg
+
+    def __repr__(self):
+        return """<%s : %s>""" %(self.__class__.__name__, self.msg)
+
+    __str__ = __repr__
+
+class ConfigurationError(StarflyerException):
+    """something went wrong during the configuration phase"""
+
 
 class Redirect(werkzeug.exceptions.HTTPException):
     """a redirect"""
