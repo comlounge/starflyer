@@ -18,7 +18,6 @@ class StaticFileHandler(Handler):
     def get(self, filename=None):
         """return a static file"""
 
-        print "static file here!", filename
         fp = pkg_resources.resource_stream(self.app.import_name, os.path.join(self.app.static_folder, filename))
 
         mimetype = mimetypes.guess_type(filename)[0]
