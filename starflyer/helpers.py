@@ -91,4 +91,13 @@ class AttributeMapper(dict):
         return AttributeMapper(d)
 
 
+class URL(object):
+    """proxy object for a URL rule in order to be used more easily in route listings"""
+
+    def __init__(self, path, endpoint = None, handler = None, **options):
+        """initialize the route url basically with what we need for werkzeug routes"""
+        self.path = path
+        self.endpoint = endpoint
+        self.handler = handler
+        self.options = options
 
