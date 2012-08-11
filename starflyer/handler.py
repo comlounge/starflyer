@@ -13,18 +13,19 @@ class Handler(object):
     template="" # default template to use
 
     
-    def __init__(self, app, request):
+    def __init__(self, app, request, module=None):
             
         """initialize the Handler with the calling application and the request
         it has to handle.
         
         :param app: The ``Application`` instance this handler belongs to
         :param request: The request object
-        :param url_adapter: The url mapper in use 
+        :param module: The module from which we might have been called. ``None`` if it was the main app
         """
         
         self.app = app
         self.request = request
+        self.module = module
         self.config = app.config
         self.url_adapter = request.url_adapter
         self.flashes = None
@@ -73,8 +74,7 @@ class Handler(object):
     def flash(self, msg, category="message"):
         """add a new flash message
 
-            (copied nearly verbatim from flask)
-
+            (copied nearly verbatim from flask) 
             :param msg: the message to be flashed.
             :param category: the category for the message.  The following values
                 are recommended: ``'message'`` for any kind of message,
@@ -123,10 +123,15 @@ class Handler(object):
     #### URL MANAGEMENT
     ####
 
-    def url_for(self, name, _full = False, _append=False, **kwargs):
+    def url_for(self, endpoint, _full = False, _append=False, **kwargs):
         """return a URL generated from the mapper"""
+        if endpoint[0] == ".": # we might be in a module with a relative path
+            if self.module is not None:
+                endpoint = "%s.%s" %(self.module.name, endpoint[1:])
+            else:
+                endpoint = endpoint[1:] # remove dot if module not found
         return self.request.url_adapter.build(
-                name, 
+                endpoint, 
                 kwargs, 
                 force_external = _full, 
                 append_unknown = _append)
@@ -151,7 +156,8 @@ class Handler(object):
         """return global variables to be used inside a template."""
         return dict(
             url_for = self.url_for,
-            get_flashes = self.get_flashes
+            get_flashes = self.get_flashes,
+            M = self.app.module_map
         )
 
     @property

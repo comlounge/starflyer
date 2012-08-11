@@ -16,17 +16,70 @@ from wsgiref.util import shift_path_info
 
 import sessions
 import static
-from helpers import AttributeMapper
+import exceptions
+from helpers import AttributeMapper, URL
+from templating import DispatchingJinjaLoader
 
-class URL(object):
-    """proxy object for a URL rule in order to be used more easily in route listings"""
 
-    def __init__(self, path, endpoint = None, handler = None, **options):
-        """initialize the route url basically with what we need for werkzeug routes"""
-        self.path = path
-        self.endpoint = endpoint
-        self.handler = handler
-        self.options = options
+class SUB(object):
+    """a proxy object for holding a set of routes which can be mounted under a given prefix"""
+
+    def __init__(self, prefix, namespace, routes):
+        """initialize the sub mount proxy with a prefix, a namespace and the list of routes
+
+        Imagine you have a python module with additional handlers and you
+        define e.g. in the modules ``__init__.py`` a list of local routes::
+
+            routes = [ URL("/", "list", handlers.List), ... ]
+
+        In your main app you now import this module but want to "mount" these URLs under the
+        ``/users`` prefix and thus by calling the URL ``/users/`` you want to use the handler
+        above. 
+        
+        In order to do that you register this list in your app's ``routes`` list as follows::
+
+            routes = [
+                URL(....),
+                URL(....),
+                SUB('/users', 'users', routes)
+            ]
+
+        Notice the ``SUB`` instance which takes a URL prefix under which to mount it, then a 
+        namespace (users) and the list of routes from the module. 
+
+        The namespace is then used to register the endpoints under which is also used in 
+        constructing the URLs, e.g. in templates::
+
+            {{ url_for('users.list') }}
+
+        Without the namespace you can only have one endpoint called ``list`` which might be
+        problematic when mixing in modules. 
+
+        .. TODO:: 
+            How to use the endpoint in your module's templates? They don't know under which prefix
+            they are registered under. Maybe use a module approach here, too?
+
+        :param prefix: The path prefix under which the routes should be mounted 
+        :param namespace: The namespacer under which the endpoints should be registered
+        :param routes: A list of ``URL`` instances which should be mounted under the prefix
+        """
+        self.prefix = prefix
+        self.routes = routes
+
+
+    #def add_url_rule(self, path, endpoint = None, handler = None, **options):
+    def add_url_rule(self, url):
+        """add another url rule to the url map""" 
+        if endpoint is None:
+            assert handler is not None, "handler and endpoint not provided"
+            endpoint = handler.__name__
+        options['endpoint'] = endpoint
+        options['defaults'] = options.get('defaults') or None
+
+        rule = self.url_rule_class(path, **options)
+        self.url_map.add(rule)
+        if handler is not None:
+            self.handlers[endpoint] = handler
 
 
 class Application(object):
@@ -78,6 +131,10 @@ class Application(object):
         extensions=['jinja2.ext.autoescape', 'jinja2.ext.with_']
     )
     
+    jinja_filters = ImmutableDict()
+
+    modules = [] # list of modules
+    module_map = {} # mapped version of modules
 
     def __init__(self, import_name, config={}, **kw):
         """initialize the Application 
@@ -123,6 +180,11 @@ class Application(object):
                           endpoint='static',
                           handler=static.StaticFileHandler)
 
+        # now bind all the modules to our app and create a mapping 
+        for module in self.modules:
+            module.bind_to_app(self)
+            self.module_map[module.name] = module
+
         # now call the hook for changing the setup after initialization
         self.finalize_setup()
 
@@ -155,16 +217,36 @@ class Application(object):
         values etc.
         """
 
+    def get_handler_context(self, request):
+        """create the handler context"""
+        return AttributeMapper()
+
 
     ####
     #### TEMPLATE related
     ####
 
-    def create_global_jinja_loader(self):
-        """create the global jinja template loader"""
+    @property
+    def jinja_loader(self):
+        """create the jinja template loader for this app.
+
+        Also modules can create those loaders and the ``create_global_jinja_loader``
+        method will gather all those together. Hence we have these two functions for
+        obviously doing the same thing.
+
+        In case you want to change the loader for app templates, simply override
+        this property in your subclassed app.
+        """
         if self.template_folder is not None:
             return jinja2.PackageLoader(self.import_name, self.template_folder)
         return None
+
+    @property
+    def global_jinja_loader(self):
+        """create the global jinja loader by collecting all the loaders of the app
+        and the modules together to one big loader
+        """
+        return DispatchingJinjaLoader(self)
 
 
     @werkzeug.cached_property
@@ -172,11 +254,12 @@ class Application(object):
         """create the jinja environment"""
         options = dict(self.jinja_options)
         if 'loader' not in options:
-            options['loader'] = self.create_global_jinja_loader()
+            options['loader'] = self.global_jinja_loader
         #if 'autoescape' not in options:
             #options['autoescape'] = self.select_jinja_autoescape
         rv = jinja2.Environment(**options)
-        #rv.filters['tojson'] = _tojson_filter
+        for name, flt in self.jinja_filters.items():
+            rv.filters[name] = flt
         return rv
         
 
@@ -222,8 +305,15 @@ class Application(object):
     #### CONFIGURATION related
     ####
     
-    def add_url_rule(self, path, endpoint = None, handler = None, **options):
+    def add_url_rule(self, url_or_path, endpoint = None, handler = None, **options):
         """add another url rule to the url map""" 
+        if isinstance(url_or_path, URL):
+            path = url_or_path.path
+            endpoint = url_or_path.endpoint
+            handler = url_or_path.handler
+            options = url_or_path.options
+        else:
+            path = url_or_path
         if endpoint is None:
             assert handler is not None, "handler and endpoint not provided"
             endpoint = handler.__name__
@@ -276,8 +366,16 @@ class Application(object):
             # this is reraised then though
             self.raise_routing_exception(request, e)
 
+        # check if we are called from a module
+        module = None
+        endpoint = url_rule.endpoint
+        parts = endpoint.split(".")
+        if len(parts)==2:
+            module_name = parts[0]
+            module = self.module_map.get(module_name, None)
+
         # try to find the right handler for this url and instantiate it
-        return self.handlers[url_rule.endpoint](self, request)
+        return self.handlers[url_rule.endpoint](self, request, module = module)
 
 
     def process_request(self, request):
