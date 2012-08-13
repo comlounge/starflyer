@@ -325,6 +325,11 @@ class Application(object):
         if handler is not None:
             self.handlers[endpoint] = handler
 
+
+    ####
+    #### request processing
+    ####
+
     @property
     def propagate_exceptions(self):
         """Returns the value of the `propagate_exceptions` configuration
@@ -334,11 +339,6 @@ class Application(object):
         if rv is not None:
             return rv
         return self.config.testing or self.config.debug
-
-
-    ####
-    #### request processing
-    ####
 
     def check_first_request(self, request):
         """check if we have already run the hooks for the first request. If not, do so now"""

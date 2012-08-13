@@ -123,7 +123,7 @@ class Handler(object):
     #### URL MANAGEMENT
     ####
 
-    def url_for(self, endpoint, _full = False, _append=False, **kwargs):
+    def url_for(self, endpoint = None,  _full = False, _append=False, **kwargs):
         """return a URL generated from the mapper"""
         if endpoint[0] == ".": # we might be in a module with a relative path
             if self.module is not None:
@@ -176,6 +176,8 @@ class Handler(object):
             tmplname = self.template
 
         params = starflyer.AttributeMapper(self.default_render_context)
+        for module in self.app.modules:
+            params.update(module.get_render_context(self))
         params.update(self.render_context)
         params.update(kwargs)
         tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)

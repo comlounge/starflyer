@@ -61,6 +61,16 @@ class Module(object):
             handler,
             **options)
 
+    def get_render_context(self, handler):
+        """you can return paramaters for the render context here. You get the active handler passed
+        so you can inspect the app, session, request and so on. 
+
+        For your own parameters override this method in your module.
+
+        :param handler: The handler for which the render context is computed
+        """
+        return {}
+
     def __call__(self, url_prefix = None, **config):
         """reconfigure the module when being registered in the modules list
         
