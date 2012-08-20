@@ -178,6 +178,7 @@ class Handler(object):
         params = starflyer.AttributeMapper(self.default_render_context)
         for module in self.app.modules:
             params.update(module.get_render_context(self))
+        params.update(self.app.get_render_context(self))
         params.update(self.render_context)
         params.update(kwargs)
         tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)

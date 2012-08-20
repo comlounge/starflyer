@@ -217,9 +217,17 @@ class Application(object):
         values etc.
         """
 
-    def get_handler_context(self, request):
-        """create the handler context"""
-        return AttributeMapper()
+    def get_render_context(self, handler):
+        """create the global app wide render context which is then passed to the template for
+        rendering. Here you can pass in global variables etc. You also get the active handler
+        for inspecting session, request and so on or for choosing based on the handler what to 
+        pass.
+
+        Note though that handler based parameters are probably better located in the handler itself.
+
+        :param handler: The active handler instance
+        """
+        return {}
 
 
     ####
