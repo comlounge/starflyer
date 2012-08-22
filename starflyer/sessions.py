@@ -190,9 +190,10 @@ class SecureCookieSessionInterface(SessionInterface):
     def open_session(self, app, request):
         key = app.config.get('secret_key', None)
         if key is not None:
-            return self.session_class.load_cookie(request,
+            session = self.session_class.load_cookie(request,
                                                   app.config.session_cookie_name,
                                                   secret_key=key)
+            return session
 
     def save_session(self, app, session, response):
         expires = self.get_expiration_time(app, session)

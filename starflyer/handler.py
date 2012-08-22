@@ -11,7 +11,6 @@ class Handler(object):
     """a request handler which is also the base class for an application"""
 
     template="" # default template to use
-
     
     def __init__(self, app, request, module=None):
             
@@ -82,9 +81,9 @@ class Handler(object):
                 messages and ``'warning'`` for warnings.  However any
                 kind of string can be used as category.
         """
-        flashes = self.session.get('flashes', [])
+        flashes = self.session.get('_flashes', [])
         flashes.append((category, msg))
-        self.session['flashes'] = flashes
+        self.session['_flashes'] = flashes
 
     def get_flashes(self, with_categories=False, category_filter=[]):
         """Pulls all flashed messages from the session and returns them.
@@ -109,9 +108,9 @@ class Handler(object):
 
         (copied somewhat verbatim from flask)
         """        
-    
+   
         session = self.session
-        flashes = session.pop('flashes') if 'flashes' in session else []
+        flashes = session.pop('_flashes') if '_flashes' in session else []
         if category_filter:
             flashes = filter(lambda f: f[0] in category_filter, flashes)
         if not with_categories:
@@ -149,14 +148,14 @@ class Handler(object):
             request = self.request,
             session = self.session,
             config = self.config,
+            get_flashes = self.get_flashes,
         )
 
     @property
     def template_globals(self):
-        """return global variables to be used inside a template."""
+        """return global variables to be used inside a template. Note that these are cached!"""
         return dict(
             url_for = self.url_for,
-            get_flashes = self.get_flashes,
             M = self.app.module_map
         )
 
