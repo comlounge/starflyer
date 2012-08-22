@@ -20,68 +20,6 @@ import exceptions
 from helpers import AttributeMapper, URL
 from templating import DispatchingJinjaLoader
 
-
-class SUB(object):
-    """a proxy object for holding a set of routes which can be mounted under a given prefix"""
-
-    def __init__(self, prefix, namespace, routes):
-        """initialize the sub mount proxy with a prefix, a namespace and the list of routes
-
-        Imagine you have a python module with additional handlers and you
-        define e.g. in the modules ``__init__.py`` a list of local routes::
-
-            routes = [ URL("/", "list", handlers.List), ... ]
-
-        In your main app you now import this module but want to "mount" these URLs under the
-        ``/users`` prefix and thus by calling the URL ``/users/`` you want to use the handler
-        above. 
-        
-        In order to do that you register this list in your app's ``routes`` list as follows::
-
-            routes = [
-                URL(....),
-                URL(....),
-                SUB('/users', 'users', routes)
-            ]
-
-        Notice the ``SUB`` instance which takes a URL prefix under which to mount it, then a 
-        namespace (users) and the list of routes from the module. 
-
-        The namespace is then used to register the endpoints under which is also used in 
-        constructing the URLs, e.g. in templates::
-
-            {{ url_for('users.list') }}
-
-        Without the namespace you can only have one endpoint called ``list`` which might be
-        problematic when mixing in modules. 
-
-        .. TODO:: 
-            How to use the endpoint in your module's templates? They don't know under which prefix
-            they are registered under. Maybe use a module approach here, too?
-
-        :param prefix: The path prefix under which the routes should be mounted 
-        :param namespace: The namespacer under which the endpoints should be registered
-        :param routes: A list of ``URL`` instances which should be mounted under the prefix
-        """
-        self.prefix = prefix
-        self.routes = routes
-
-
-    #def add_url_rule(self, path, endpoint = None, handler = None, **options):
-    def add_url_rule(self, url):
-        """add another url rule to the url map""" 
-        if endpoint is None:
-            assert handler is not None, "handler and endpoint not provided"
-            endpoint = handler.__name__
-        options['endpoint'] = endpoint
-        options['defaults'] = options.get('defaults') or None
-
-        rule = self.url_rule_class(path, **options)
-        self.url_map.add(rule)
-        if handler is not None:
-            self.handlers[endpoint] = handler
-
-
 class Application(object):
     """a base class for dispatching WSGI requests"""
 
