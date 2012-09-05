@@ -30,11 +30,6 @@ class Application(object):
 
     handlers = {} # mapping from endpoint to handler classes
 
-    # directory and URL endpoint setup
-    template_folder = "templates/"
-    static_folder   = "static/"
-    static_url_path = "/static"
-
     # class to be used for URL Routes
     url_rule_class = werkzeug.routing.Rule
 
@@ -63,6 +58,9 @@ class Application(object):
         'debug'                         : False,
         'testing'                       : False,
         'static_cache_timeout'          : 12 * 60 * 60,
+        'template_folder'               : "templates/",
+        'static_folder'                 : "static/",
+        'static_url_path'               : "/static",
     }
 
     jinja_options = ImmutableDict(
@@ -109,14 +107,15 @@ class Application(object):
         self._got_first_request = False
 
         # clean up static url path
-        sup = self.static_url_path
-        if sup.endswith("/"):
-            sup = sup[:-1] # remove any trailing slash
-        if not sup.startswith("/"):
-            sup = "/"+sup # add a leading slash if missing
-        self.add_url_rule(sup+ '/<path:filename>',
-                          endpoint='static',
-                          handler=static.StaticFileHandler)
+        if self.config.static_folder is not None:
+            sup = self.config.static_url_path
+            if sup.endswith("/"):
+                sup = sup[:-1] # remove any trailing slash
+            if not sup.startswith("/"):
+                sup = "/"+sup # add a leading slash if missing
+            self.add_url_rule(sup+ '/<path:filename>',
+                            endpoint='static',
+                            handler=static.StaticFileHandler)
 
         # now bind all the modules to our app and create a mapping 
         for module in self.modules:
@@ -183,8 +182,8 @@ class Application(object):
         In case you want to change the loader for app templates, simply override
         this property in your subclassed app.
         """
-        if self.template_folder is not None:
-            return jinja2.PackageLoader(self.import_name, self.template_folder)
+        if self.config.template_folder is not None:
+            return jinja2.PackageLoader(self.import_name, self.config.template_folder)
         return None
 
     @property
