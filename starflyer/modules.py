@@ -59,7 +59,6 @@ class Module(object):
                 sup = sup[:-1]  # remove any trailing slash
             if not sup.startswith("/"):
                 sup = "/"+sup   # add a leading slash if missing
-            print "ADDING"
             self.add_url_rule(sup+ '/<path:filename>',
                               endpoint='static',
                               handler=static.StaticFileHandler)
