@@ -70,7 +70,7 @@ class Application(object):
     jinja_filters = ImmutableDict()
 
     modules = [] # list of modules
-    module_map = {} # mapped version of modules
+    module_map = AttributeMapper() # mapped version of modules
 
     def __init__(self, import_name, config={}, **kw):
         """initialize the Application 
@@ -91,10 +91,7 @@ class Application(object):
         self.config.update(config)
         self.config.update(kw)
         # TODO: update from environment vars?
-        
 
-        # TODO: Do we want sub application support? If so, add here.
-       
         # initialize the actual routes 
         for route in self.routes:
             self.add_url_rule(
