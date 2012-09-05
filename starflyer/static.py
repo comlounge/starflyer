@@ -17,9 +17,13 @@ class StaticFileHandler(Handler):
 
     def get(self, filename=None):
         """return a static file"""
-
-        fp = pkg_resources.resource_stream(self.app.import_name, os.path.join(self.app.static_folder, filename))
-
+        if self.module is not None:
+            fp = pkg_resources.resource_stream(self.module.import_name, os.path.join(self.module.config.static_folder, filename))
+            config = self.module.config
+        else:
+            fp = pkg_resources.resource_stream(self.app.import_name, os.path.join(self.app.config.static_folder, filename))
+            config = self.app.config
+        
         mimetype = mimetypes.guess_type(filename)[0]
         if mimetype is None:
             mimetype = 'application/octet-stream'
