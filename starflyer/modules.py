@@ -1,5 +1,8 @@
 import exceptions
 import copy
+
+
+import static
 from .helpers import AttributeMapper, URL
 
 class Module(object):
@@ -9,7 +12,14 @@ class Module(object):
     routes = []
     module_jinja_loader = None  # templates from this loader can be found at _m/<modname>/<templatename>
     jinja_loader = None         # templates from this loader will be unprefixed in the main namespace. 
-    default_config = {}         # default config dictionary providing defaults
+    defaults = {}               # default config dictionary providing defaults
+
+    # some defaults we always need (like in apps)
+    enforced_defaults = {
+        'template_folder'               : None,
+        'static_folder'                 : None,
+        'static_url_path'               : None,
+    }
 
     def __init__(self, import_name, name = None, url_prefix = ""):
         """initialize the module
@@ -18,6 +28,7 @@ class Module(object):
             for putting everything into the main namespace
         """
 
+        self.import_name = import_name
         if url_prefix is not None:
             url_prefix = url_prefix.rstrip("/")
         self.url_prefix = url_prefix
@@ -25,14 +36,12 @@ class Module(object):
             self.name = name
         if self.name is None:
             raise exceptions.ConfigurationError("you need to configure a name for your module")
-            
 
     def bind_to_app(self, app):
         """called by the application object when the module is bound to the application.
         From there on we can the configuration necessary
 
         """
-
         self.app = app 
 
         # initialize the routes under the given prefix
@@ -42,6 +51,19 @@ class Module(object):
                 route.endpoint,
                 route.handler,
                 **route.options)
+
+        # add static files
+        if self.config.static_folder is not None:
+            sup = self.config.static_url_path
+            if sup.endswith("/"):
+                sup = sup[:-1]  # remove any trailing slash
+            if not sup.startswith("/"):
+                sup = "/"+sup   # add a leading slash if missing
+            print "ADDING"
+            self.add_url_rule(sup+ '/<path:filename>',
+                              endpoint='static',
+                              handler=static.StaticFileHandler)
+        
 
         self.finalize()
 
@@ -71,16 +93,21 @@ class Module(object):
         """
         return {}
 
-    def __call__(self, url_prefix = None, **config):
+    def __call__(self, url_prefix = None, config = {}, **kw):
         """reconfigure the module when being registered in the modules list
         
         :param url_prefix: the url prefix to use for this module. If it is None the default one applies
         :param config: configuration parameters which will be available in the ``config`` instance variable of the module
+        :param kw: additional keyword arguments to configure it (override everything else)
         """
         if url_prefix is not None:
             self.url_prefix = url_prefix
-        self.config = AttributeMapper(self.default_config) # first copy in the defaults 
+        else:
+            self.url_prefix = "/"+self.name
+        self.config = AttributeMapper(self.enforced_defaults or {})
+        self.config.update(self.defaults)
         self.config.update(config)
+        self.config.update(kw)
         return self
 
     def finalize(self):
