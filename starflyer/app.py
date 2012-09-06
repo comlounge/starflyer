@@ -13,6 +13,7 @@ import jinja2
 
 from werkzeug.datastructures import ImmutableDict
 from wsgiref.util import shift_path_info
+from werkzeug.test import Client, EnvironBuilder
 
 import sessions
 import static
@@ -35,6 +36,9 @@ class Application(object):
 
     # session interface
     session_interface = sessions.SecureCookieSessionInterface()
+
+    # class to be used as test client class
+    test_client_class = None
 
     # response class to use
     response_class = wrappers.Response
@@ -126,6 +130,9 @@ class Application(object):
         # you call it in a different module. Then again maybe not so useful if you also have
         # to provide template etc. then. So maybe a different local config file loading is
         # more useful, e.g. via ini-file
+
+        # for testing purposes. Set app.config.testing = True and this will be populated.
+        self.last_handler = None
     
     ####
     #### hooks for first request, finalizing and error handling
@@ -346,6 +353,9 @@ class Application(object):
             try:
                 # find the handler and call it
                 handler = self.find_handler(request)
+                if self.config.testing:
+                    # remember the last used handler for testing purposes
+                    self.last_handler = handler
                 response = handler(**request.view_args)
             except Exception, e:
                 response = self.handle_user_exception(request, e)
@@ -493,33 +503,6 @@ class Application(object):
         from .helpers import FormDataRoutingRedirect
         raise FormDataRoutingRedirect(request, exception)
 
-    ####
-    #### testing helper
-    ####
-
-    def make_request(self, **options):
-        """create a request based on the given options. Those options are the same
-        parameters which you can give to :class:`~werkzeug.test.EnvironmentBuilder`.
-        
-        Most common are probably the ``path`` and ``method`` parameters
-
-        :return: an instance of the request class configured for the application instance.
-        """
-        builder = werkzeug.test.EnvironBuilder(**options)
-        env = builder.get_environ()
-        return self.request_class(env)
-
-    def run_request(self, **options):
-        """run a request through the application. This method will run it only through
-        the actual request processing and will return a ``Response`` instance and not
-        a HTTP response. The WSGI stack is not used in this case.
-
-        :param options: Options for the :class:`~werkzeug.test.EnvironBuilder`
-        """
-        request = self.make_request(**options)
-        return self.process_request(request)
-
-        
 
     ####
     #### WSGI runner for development
@@ -575,3 +558,51 @@ class Application(object):
 
 
 
+    ####
+    #### TESTING SUPPORT
+    ####
+
+    def test_client(self, use_cookies=True):
+        """Creates a test client for this application.  For information
+        about unit testing head over to :ref:`testing`.
+
+        Note that if you are testing for assertions or exceptions in your
+        application code, you must set ``app.defaults.testing = True`` in order
+        for the exceptions to propagate to the test client.  Otherwise, the
+        exception will be handled by the application (not visible to the test
+        client) and the only indication of an AssertionError or other exception
+        will be a 500 status code response to the test client.  
+        See the :attr:`testing` attribute.  For example::
+
+            app.config.testing = True
+            client = app.test_client()
+
+        """
+        cls = self.test_client_class
+        if cls is None:
+            cls = Client
+        return cls(self, self.response_class, use_cookies=use_cookies)
+    
+    def make_request(self, **options):
+        """create a request based on the given options. Those options are the same
+        parameters which you can give to :class:`~werkzeug.test.EnvironmentBuilder`.
+        
+        Most common are probably the ``path`` and ``method`` parameters
+
+        :return: an instance of the request class configured for the application instance.
+        """
+        builder = werkzeug.test.EnvironBuilder(**options)
+        env = builder.get_environ()
+        return self.request_class(env)
+
+    def run_request(self, **options):
+        """run a request through the application. This method will run it only through
+        the actual request processing and will return a ``Response`` instance and not
+        a HTTP response. The WSGI stack is not used in this case.
+
+        :param options: Options for the :class:`~werkzeug.test.EnvironBuilder`
+        """
+        request = self.make_request(**options)
+        return self.process_request(request)
+
+        
