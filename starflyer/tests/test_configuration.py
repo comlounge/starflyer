@@ -45,19 +45,15 @@ def test_static_url_path_override(app):
     response = app.process_request(request)
     assert response.data == "TEST\n"
 
-
 def test_jinja_options_override(app):
     app.jinja_options = dict(app.jinja_options)
     app.jinja_options['cache_size'] = 100 # just for checking
     assert app.jinja_env.cache.capacity == 100
-
     
 def test_jinja_environment_is_cached(app):
     assert app.jinja_env.cache.capacity == 50
-
     app.jinja_options = dict(app.jinja_options)
     app.jinja_options['cache_size'] = 100 # just for checking
-    
     assert app.jinja_env.cache.capacity == 50
 
 def test_defaults(app):
