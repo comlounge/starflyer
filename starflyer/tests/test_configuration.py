@@ -9,15 +9,14 @@ from StringIO import StringIO
 class TestApplication(Application):
     """our test application to check configuration"""
 
-    template_folder = "test_templates/"
-    static_folder = "static_folder/"
-    static_url_path = "/assets/"
-
     defaults = {
         'debug'                 : True, 
         'title'                 : "foobar",
         'description'           : "barfoo",
         'preferred_url_scheme'  : "https",
+        'template_folder'       : 'test_templates/',
+        'static_folder'         : 'static_folder/',
+        'static_url_path'       : '/assets/',
     }
 
     def finalize_setup(self):
@@ -27,19 +26,19 @@ def pytest_funcarg__app(request):
     return TestApplication(__name__)
 
 def test_template_folder_override(app):
-    assert app.template_folder == "test_templates/"
+    assert app.config.template_folder == "test_templates/"
     tmpl = app.jinja_env.get_or_select_template("foobar.html")
     assert tmpl.render() == "TEST"
 
 def test_static_folder_override(app):
-    assert app.static_folder == "static_folder/"
+    assert app.config.static_folder == "static_folder/"
     request = starflyer.Request({})
     handler = StaticFileHandler(app, request)
     response = handler.get(filename="test.txt")
     assert response.data == "TEST\n"
 
 def test_static_url_path_override(app):
-    assert app.static_url_path == "/assets/"
+    assert app.config.static_url_path == "/assets/"
     builder = EnvironBuilder(method='GET', path="/assets/test.txt")
     env = builder.get_environ()
     request = starflyer.Request(env)
@@ -50,7 +49,6 @@ def test_static_url_path_override(app):
 def test_jinja_options_override(app):
     app.jinja_options = dict(app.jinja_options)
     app.jinja_options['cache_size'] = 100 # just for checking
-
     assert app.jinja_env.cache.capacity == 100
 
     

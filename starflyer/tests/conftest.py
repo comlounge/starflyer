@@ -12,6 +12,7 @@ class BrokenHandler(Handler):
 
     def get(self):
         # call something which leads to an error
+        print "doing something broken here"
         return broken()
 
 class FlashHandler(Handler):
@@ -35,8 +36,10 @@ class RenderHandler(Handler):
 
     def get(self):
         params = self.request.args
+        print params
         if "tmpl" in params:
             tmplname = params['tmpl']
+            print tmplname
             return self.render(tmplname, stuff="stuff from call")
         content = "rendered"
         if "content" in params:
@@ -107,8 +110,12 @@ class TestApplication(Application):
         URL("/broken",     "broken",       BrokenHandler),
     ]
 
+    defaults = {
+        'template_folder'   : 'test_templates/',
+        'debug'             : False,
+    }
+
     first_counter = 0
-    template_folder = "test_templates/"
 
     def before_first_request(self, request):
         self.first_counter = self.first_counter + 1

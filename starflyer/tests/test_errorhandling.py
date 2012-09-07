@@ -11,20 +11,27 @@ def test_broken_handler_with_debug(client):
     pytest.raises(NameError, client.get, "/broken")
 
 def test_broken_handler_no_propagate(client):
+    """check if the right thing happens if we don't have an error handler defined"""
     client.application.config.debug = True
+    client.application.error_handlers = {}
+    # this means to use the default error handler (InternalServerError)
     client.application.config.propagate_exceptions = False
     resp = client.get("/broken")
     assert resp.status_code == 500
 
+def test_broken_handler_propagate(client):
+    """check if the right thing happens if we don't have an error handler defined"""
+    client.application.config.debug = True
+    client.application.error_handlers = {}
+    client.application.config.propagate_exceptions = True
+    pytest.raises(NameError, client.get, "/broken")
+
 def test_error_handler(client):
     client.application.config.debug = False
     resp = client.get("/broken")
-    assert resp.status_code == 500
-    assert resp.data == "my custom error handler"
+    assert resp.status_code == 200
 
-    # TODO: Error handlers need some overhaul! We do not need methods and they are not supposed to return
-    # 200 status codes. They probably simply need a process() method. They also need to be able to get the
-    # status code passed in.
+# TODO: We need some test for some error handlers and some example
 
 # TODO: This uses an AssertionError internally which fails as it's also patched by pytest
 @pytest.mark.xfail()

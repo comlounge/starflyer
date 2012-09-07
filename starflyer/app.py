@@ -58,7 +58,7 @@ class Application(object):
         'logger_name'                   : None,
         'server_name'                   : None,
         'application_root'              : None,
-        'propagate_exceptions'          : None,
+        'propagate_exceptions'          : None, # this is used for testing and debugging and means to re-raise it and not use an error handler for uncaught exceptions
         'debug'                         : False,
         'testing'                       : False,
         'static_cache_timeout'          : 12 * 60 * 60,
@@ -370,6 +370,7 @@ class Application(object):
         try:
             response = self.process_request(request)
         except Exception, e:    
+            print "again got this error", e
             response = self.handle_exception(request, e)
         return response(environ, start_response)
         
@@ -461,6 +462,7 @@ class Application(object):
         exc_type, exc_value, tb = sys.exc_info()
 
         handler = self.error_handlers.get(500)
+        print "found handler", handler
 
         if self.propagate_exceptions:
             # if we want to repropagate the exception, we can attempt to
@@ -471,11 +473,13 @@ class Application(object):
                 raise exc_type, exc_value, tb
             else:
                 raise e
-
+        print "log it"
         logbook.exception()
         
         if handler is None:
+            print "no handler, using InternalServerError"
             return werkzeug.exceptions.InternalServerError()
+        print "calling error handler"
         return self.call_error_handler(handler, request, exception = e)
 
     
@@ -497,6 +501,10 @@ class Application(object):
 
         from .helpers import FormDataRoutingRedirect
         raise FormDataRoutingRedirect(request, exception)
+
+    ####
+    #### COOKIE related 
+    ####
 
 
     ####
