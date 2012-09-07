@@ -37,6 +37,39 @@ class Module(object):
         if self.name is None:
             raise exceptions.ConfigurationError("you need to configure a name for your module")
 
+
+    ####
+    #### configuration related hooks you can override
+    ####
+
+    def finalize(self):
+        """finalize the setup after the module has been bound to the app"""
+
+    ####
+    #### handler related hooks you can override
+    ####
+
+    def get_render_context(self, handler):
+        """you can return paramaters for the render context here. You get the active handler passed
+        so you can inspect the app, session, request and so on. 
+
+        For your own parameters override this method in your module.
+
+        :param handler: The handler for which the render context is computed
+        """
+        return {}
+
+    def after_handler_init(self, handler):
+        """This is called from the handler after the initialization has been finished. You
+        can use this to e.g. further inspect the request and put some data into handler.module_data
+
+        :param handler: The handler for which the render context is computed
+        """
+
+    ####
+    #### module mechanics
+    ####
+
     def bind_to_app(self, app):
         """called by the application object when the module is bound to the application.
         From there on we can the configuration necessary
@@ -82,15 +115,6 @@ class Module(object):
             handler,
             **options)
 
-    def get_render_context(self, handler):
-        """you can return paramaters for the render context here. You get the active handler passed
-        so you can inspect the app, session, request and so on. 
-
-        For your own parameters override this method in your module.
-
-        :param handler: The handler for which the render context is computed
-        """
-        return {}
 
     def __call__(self, url_prefix = None, config = {}, **kw):
         """reconfigure the module when being registered in the modules list
@@ -109,7 +133,5 @@ class Module(object):
         self.config.update(kw)
         return self
 
-    def finalize(self):
-        """finalize the setup after the module has been bound to the app"""
 
 

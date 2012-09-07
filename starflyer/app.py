@@ -153,6 +153,10 @@ class Application(object):
         values etc.
         """
 
+    ####
+    #### handler related hooks you can override
+    ####
+    
     def get_render_context(self, handler):
         """create the global app wide render context which is then passed to the template for
         rendering. Here you can pass in global variables etc. You also get the active handler
@@ -164,6 +168,13 @@ class Application(object):
         :param handler: The active handler instance
         """
         return {}
+
+    def after_handler_init(self, handler):
+        """This is called from the handler after the initialization has been finished. You
+        can use this to e.g. further inspect the request and change your handler instance data
+
+        :param handler: The handler for which the render context is computed
+        """
 
 
     ####
@@ -357,6 +368,9 @@ class Application(object):
 
         if handler and not self.session_interface.is_null_session(handler.session):
             self.save_session(handler.session, response)
+
+        for cookie in handler.set_cookies:
+            cookie.save(response)
 
         return self.finalize_response(response) # hook for post processing a resposne
 

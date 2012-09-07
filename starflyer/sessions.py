@@ -1,22 +1,49 @@
 # -*- coding: utf-8 -*-
 """
 
-    as it has all we need, simply copied over from flask
+    as it has all we need, simply copied over from flask.
 
-
-    flask.sessions
-    ~~~~~~~~~~~~~~
-
-    Implements cookie based sessions based on Werkzeug's secure cookie
-    system.
-
-    :copyright: (c) 2011 by Armin Ronacher.
+    :copyright: (c) 2011 by Armin Ronacher, Christian Scholz
     :license: BSD, see LICENSE for more details.
 """
 
 from datetime import datetime
 from werkzeug.contrib.securecookie import SecureCookie
 
+class Cookie(SecureCookie):
+    """our own cookie implementation which not only stores the payload but
+    also metadata such as lifetime etc. We need to store it here because
+    in handlers we can remember it that way for the app which then sets
+    it on the response."""
+
+    def __init__(self, key, data=None, secret_key=None, new=True,
+        expires=None, session_expires=None, max_age=None, path='/', 
+        domain=None, secure=None, httponly=False, force=False):
+        super(Cookie, self).__init__(data, secret_key, new)
+        self.key = key
+        self.expires = expires
+        self.session_expires = session_expires
+        self.max_age = max_age
+        self.path = path
+        self.domain = domain
+        self.secure = secure
+        self.httponly = httponly
+        self.force = force
+        self.modified = True
+
+    def save(self, response):
+        """save this cookie"""
+        self.save_cookie(response, 
+            key=self.key, 
+            expires=self.expires, 
+            session_expires=self.session_expires, 
+            max_age=self.max_age, 
+            path=self.path,
+            domain=self.domain, 
+            secure=self.secure, 
+            httponly=self.httponly, 
+            force=True)
+        
 
 class SessionMixin(object):
     """Expands a basic dictionary with an accessors that are expected
@@ -43,7 +70,6 @@ class SessionMixin(object):
     #: long as changes do not happen on mutable structures in the session.
     #: The default mixin implementation just hardcodes `True` in.
     modified = True
-
 
 class SecureCookieSession(SecureCookie, SessionMixin):
     """Expands the session with support for switching between permanent
