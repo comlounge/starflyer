@@ -370,7 +370,6 @@ class Application(object):
         try:
             response = self.process_request(request)
         except Exception, e:    
-            print "again got this error", e
             response = self.handle_exception(request, e)
         return response(environ, start_response)
         
@@ -462,7 +461,6 @@ class Application(object):
         exc_type, exc_value, tb = sys.exc_info()
 
         handler = self.error_handlers.get(500)
-        print "found handler", handler
 
         if self.propagate_exceptions:
             # if we want to repropagate the exception, we can attempt to
@@ -473,13 +471,10 @@ class Application(object):
                 raise exc_type, exc_value, tb
             else:
                 raise e
-        print "log it"
         logbook.exception()
         
         if handler is None:
-            print "no handler, using InternalServerError"
             return werkzeug.exceptions.InternalServerError()
-        print "calling error handler"
         return self.call_error_handler(handler, request, exception = e)
 
     
