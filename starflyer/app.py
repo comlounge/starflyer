@@ -9,6 +9,7 @@ import logbook
 import wrappers
 import werkzeug
 import werkzeug.test
+from werkzeug.contrib.securecookie import SecureCookie
 import jinja2
 
 from werkzeug.datastructures import ImmutableDict
@@ -368,9 +369,10 @@ class Application(object):
 
         if handler and not self.session_interface.is_null_session(handler.session):
             self.save_session(handler.session, response)
-
-        for cookie in handler.set_cookies:
-            cookie.save(response)
+            for cookie in handler.set_cookies:
+                cookie.save(response)
+            for name in handler.delete_cookies:
+                response.delete_cookie(name)
 
         return self.finalize_response(response) # hook for post processing a resposne
 
@@ -514,6 +516,12 @@ class Application(object):
     ####
     #### COOKIE related 
     ####
+
+    def load_cookie(self, request, name, secret_key = None):
+        """load a secure cookie by name or return an empty cookie if not present"""
+        if secret_key is None:
+            secret_key = self.config.get('secret_key', None)
+        return SecureCookie.load_cookie(request, name, secret_key = secret_key)
 
 
     ####
