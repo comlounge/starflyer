@@ -31,6 +31,7 @@ class Handler(object):
         self.session = None
         self.module_data = starflyer.AttributeMapper()
         self.set_cookies = [] # ``sessions.Cookie`` instances which will be set by the app
+        self.delete_cookies = [] # cookie names of cookies to delete
 
         # retrieve a session if available
         self.session = self.app.open_session(self.request)
@@ -78,12 +79,6 @@ class Handler(object):
     #### COOKIE RELATED
     ####
 
-    def set_cookie(self, name, payload, path="/", domain=None, secure=None, httponly=None, force=False):
-        """set a cookie named ``name`` as a securecookie. ``payload`` needs to be a dictionary and all additional
-        parameters will be passed through to ``save_cookie`` or set via the application defaults. 
-        """
-
-
     def set_cookie(self, key, data, **kw):
         """create a cookie and mark it for saving"""
         app = self.app
@@ -114,6 +109,13 @@ class Handler(object):
         # now mark it for saving (the app will do that as it has the response)
         self.set_cookies.append(sessions.Cookie(key, data, new=True, **metadata))
 
+    def load_cookie(self, name):
+        """load back a cookie saves with ``set_cookie``
+
+        :param name: the name of the cookie you want to load
+        :return: returns the payload as a dict or an empty dict if no cookie was found
+        """
+        return self.app.load_cookie(self.request, name)
 
 
     ####
