@@ -14,6 +14,21 @@ except ImportError:
 class StaticFileHandler(Handler):
     """handles static files"""
 
+    def __init__(self, app, request, module = None):
+        self.app = app
+        self.request = request
+        self.module = module
+        self.config = app.config
+        self.url_adapter = request.url_adapter
+
+    def __call__(self, **m):
+        """simplified version of a call"""
+
+        method = self.request.method
+        method = self.request.values.get("method", method)
+        method = method.lower()
+
+        return self.make_response(self.get(**m))
 
     def get(self, filename=None):
         """return a static file"""
