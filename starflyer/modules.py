@@ -59,11 +59,19 @@ class Module(object):
         """
         return {}
 
-    def after_handler_init(self, handler):
+    def before_handler(self, handler):
         """This is called from the handler after the initialization has been finished. You
-        can use this to e.g. further inspect the request and put some data into handler.module_data
+        can use this to e.g. further inspect the request and put some data into the handler or it's
+        session
 
         :param handler: The handler for which the render context is computed
+        """
+
+    def after_handler(self, handler, response):
+        """This hook is run after the handler processing is done but before the response is sent
+        out. You can check the handler or response and maybe return your own response here. In case
+        you do that this response will be used instead. If you return None then the original handler
+        response will be used.
         """
 
     ####

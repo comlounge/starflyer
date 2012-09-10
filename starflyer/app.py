@@ -138,9 +138,26 @@ class Application(object):
         """if you want to run something on the first incoming request then put it here"""
         pass
 
+    def before_handler(self, handler):
+        """this is run before handler processing starts but the handler is already initialized.
+        You can check request, session and all that and maybe add some variables to the handler.
+
+        If you return something else than None, handler processing will not happen and the
+        return value will be taken as response instead. 
+        """
+
+    def after_handler(self, handler, response):
+        """This hook is run after the handler processing is done but before the response is sent
+        out. You can check the handler or response and maybe return your own response here. In case
+        you do that this response will be used instead. If you return None then the original handler
+        response will be used.
+        """
+
 
     def finalize_response(self, response):
         """with this hook you can do something very generic to a response after all processing.
+
+        TODO: check if this is used somewhere in our projects
         
         Please not that the response can also be an :class:`~werkzeug.exception.HTTPException` instance
         which does not have a status code. 

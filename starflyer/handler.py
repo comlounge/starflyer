@@ -29,7 +29,6 @@ class Handler(object):
         self.url_adapter = request.url_adapter
         self.flashes = None
         self.session = None
-        self.module_data = starflyer.AttributeMapper()
 
         # retrieve a session if available
         self.session = self.app.open_session(self.request)
