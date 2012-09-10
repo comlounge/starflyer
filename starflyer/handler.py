@@ -30,8 +30,6 @@ class Handler(object):
         self.flashes = None
         self.session = None
         self.module_data = starflyer.AttributeMapper()
-        self.set_cookies = [] # ``sessions.Cookie`` instances which will be set by the app
-        self.delete_cookies = [] # cookie names of cookies to delete
 
         # retrieve a session if available
         self.session = self.app.open_session(self.request)
@@ -79,7 +77,7 @@ class Handler(object):
     #### COOKIE RELATED
     ####
 
-    def set_cookie(self, key, data, **kw):
+    def set_cookie(self, key, data, response, **kw):
         """create a cookie and mark it for saving"""
         app = self.app
         duration = self.app.config.permanent_session_lifetime
@@ -107,6 +105,7 @@ class Handler(object):
         metadata.update(kw)
 
         # now mark it for saving (the app will do that as it has the response)
+        sessions.Cookie(key, data, new=True, **metadata).save(response)
         self.set_cookies.append(sessions.Cookie(key, data, new=True, **metadata))
 
     def load_cookie(self, name):
@@ -255,6 +254,11 @@ class Handler(object):
 
         # create the response
         response = self.make_response(rv) 
+
+        # set cookies and session
+        if not self.app.session_interface.is_null_session(self.session):
+            print "saving session", self.session
+            self.app.save_session(self.session, response)
 
         # return the post processed response
         return self.after(response)

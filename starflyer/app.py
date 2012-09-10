@@ -367,13 +367,6 @@ class Application(object):
             except Exception, e:
                 response = self.handle_user_exception(request, e)
 
-        if handler and not self.session_interface.is_null_session(handler.session):
-            self.save_session(handler.session, response)
-            for cookie in handler.set_cookies:
-                cookie.save(response)
-            for name in handler.delete_cookies:
-                response.delete_cookie(name)
-
         return self.finalize_response(response) # hook for post processing a resposne
 
     
