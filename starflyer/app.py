@@ -153,12 +153,9 @@ class Application(object):
         response will be used.
         """
 
-
     def finalize_response(self, response):
         """with this hook you can do something very generic to a response after all processing.
 
-        TODO: check if this is used somewhere in our projects
-        
         Please not that the response can also be an :class:`~werkzeug.exception.HTTPException` instance
         which does not have a status code. 
 
@@ -186,13 +183,6 @@ class Application(object):
         :param handler: The active handler instance
         """
         return {}
-
-    def after_handler_init(self, handler):
-        """This is called from the handler after the initialization has been finished. You
-        can use this to e.g. further inspect the request and change your handler instance data
-
-        :param handler: The handler for which the render context is computed
-        """
 
 
     ####
@@ -377,12 +367,37 @@ class Application(object):
             try:
                 # find the handler and call it
                 handler = self.find_handler(request)
+
+                # run the before_handler hooks from app and modules
+                if handler.use_hooks:
+                    for module in self.modules:
+                        rv = module.before_handler(handler)
+                        if rv is not None:
+                            return rv
+                    rv = self.before_handler(handler)
+                    if rv is not None:
+                        return rv
+
+                # in case we are in testing mode remember the last used handler
                 if self.config.testing:
-                    # remember the last used handler for testing purposes
                     self.last_handler = handler
+
+                # call the handler and receive the response
                 response = handler(**request.view_args)
+                for module in self.modules:
+                    rv = module.after_handler(handler, response) # hook for post processing a resposne
+                    if rv is not None:
+                        return rv
+                rv = self.after_handler(handler, response) # hook for post processing a resposne
+                if rv is not None:
+                    return rv
+
             except Exception, e:
                 response = self.handle_user_exception(request, e)
+
+            # now save the session after the after handlers might have changed it
+            if handler and not self.session_interface.is_null_session(handler.session):
+                self.save_session(handler.session, response)
 
         return self.finalize_response(response) # hook for post processing a resposne
 
@@ -533,6 +548,23 @@ class Application(object):
             secret_key = self.config.get('secret_key', None)
         return SecureCookie.load_cookie(request, name, secret_key = secret_key)
 
+    def set_cookie(self, response, name, data, path = None, expires = None, secret_key = None, max_age = None,
+                    secure = False, httponly = True, force = True):
+        """store data under the named cookie as a securecookie in the response"""
+        if secret_key is None:
+            secret_key = self.config.get('secret_key', None)
+        cookie = SecureCookie(data, secret_key=secret_key)
+        path = path or self.config.get('session_cookie_path') or \
+               self.config.get('application_root') or '/'
+        cookie.save_cookie(response, key=name, expires=expires, max_age=max_age, 
+            path=path, domain=self.config.session_cookie_domain, 
+            secure=secure, httponly=httponly, force=force)
+
+    def delete_cookie(self, response, name, path=None):
+        """delete a cookie (secure or not) from the response"""
+        path = path or self.config.get('session_cookie_path') or \
+               self.config.get('application_root') or '/'
+        response.delete_cookie(name, path)
 
     ####
     #### WSGI runner for development

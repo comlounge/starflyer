@@ -14,6 +14,8 @@ except ImportError:
 class StaticFileHandler(Handler):
     """handles static files"""
 
+    use_hooks = False
+
     def __init__(self, app, request, module = None):
         self.app = app
         self.request = request

@@ -103,8 +103,6 @@ class Module(object):
             self.add_url_rule(sup+ '/<path:filename>',
                               endpoint='static',
                               handler=static.StaticFileHandler)
-        
-
         self.finalize()
 
     def add_url_rule(self, url_or_path, endpoint = None, handler = None, **options):

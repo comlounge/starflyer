@@ -11,6 +11,7 @@ class Handler(object):
     """a request handler which is also the base class for an application"""
 
     template="" # default template to use
+    use_hooks = True # set to False if you don't want the before_handler hooks to be used for this handler
     
     def __init__(self, app, request, module = None):
             
@@ -34,12 +35,7 @@ class Handler(object):
         self.session = self.app.open_session(self.request)
         if self.session is None:
             self.session = self.app.make_null_session()
-
-        # run some before_handler hooks from the app and modules
-        for module in self.app.modules:
-            module.after_handler_init(self)
-        self.app.after_handler_init(self)
-            
+        # note that session saving is happening in the app as some hooks could run before that 
 
     ####
     #### before and after request hooks
@@ -70,50 +66,6 @@ class Handler(object):
     ### right now we have an existing one already but what if we want
     ### to change headers? Do it via decorators only? Maybe better, also for
     ### testing.
-
-
-    ####
-    #### COOKIE RELATED
-    ####
-
-    def set_cookie(self, key, data, response, **kw):
-        """create a cookie and mark it for saving"""
-        app = self.app
-        duration = self.app.config.permanent_session_lifetime
-        expires = datetime.datetime.utcnow() + duration
-        domain = self.app.session_interface.get_cookie_domain(app)
-        path = app.session_interface.get_cookie_path(app)
-        httponly = app.session_interface.get_cookie_httponly(app)
-        secure = app.session_interface.get_cookie_secure(app)
-        secret_key = app.config.get('secret_key', None)
-        if secret_key is None:
-            raise RuntimeError('the user cookie is unavailable because no secret ' 
-                    'key was set.  Set the secret_key on the '
-                    'userbase module to something unique and secret.')
-        if domain is None:
-            domain = app.config.session_cookie_domain
-
-        metadata = dict(
-            path=path, 
-            expires=expires, 
-            httponly=httponly, 
-            secure=secure, 
-            domain=domain,
-            secret_key=secret_key
-        )
-        metadata.update(kw)
-
-        # now mark it for saving (the app will do that as it has the response)
-        sessions.Cookie(key, data, new=True, **metadata).save(response)
-        self.set_cookies.append(sessions.Cookie(key, data, new=True, **metadata))
-
-    def load_cookie(self, name):
-        """load back a cookie saves with ``set_cookie``
-
-        :param name: the name of the cookie you want to load
-        :return: returns the payload as a dict or an empty dict if no cookie was found
-        """
-        return self.app.load_cookie(self.request, name)
 
 
     ####
@@ -253,11 +205,6 @@ class Handler(object):
 
         # create the response
         response = self.make_response(rv) 
-
-        # set cookies and session
-        if not self.app.session_interface.is_null_session(self.session):
-            print "saving session", self.session
-            self.app.save_session(self.session, response)
 
         # return the post processed response
         return self.after(response)
