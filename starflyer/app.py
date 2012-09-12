@@ -384,13 +384,14 @@ class Application(object):
 
                 # call the handler and receive the response
                 response = handler(**request.view_args)
-                for module in self.modules:
-                    rv = module.after_handler(handler, response) # hook for post processing a resposne
+                if handler.use_hooks:
+                    for module in self.modules:
+                        rv = module.after_handler(handler, response) # hook for post processing a resposne
+                        if rv is not None:
+                            return rv
+                    rv = self.after_handler(handler, response) # hook for post processing a resposne
                     if rv is not None:
                         return rv
-                rv = self.after_handler(handler, response) # hook for post processing a resposne
-                if rv is not None:
-                    return rv
 
             except Exception, e:
                 response = self.handle_user_exception(request, e)
