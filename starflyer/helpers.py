@@ -94,7 +94,6 @@ class AttributeMapper(dict):
     def update(self, d):
         """update the dictionary but make sure that existing included AttributeMappers are only updated aswell"""
         for a,v in d.items():
-            print a,v, type(self), type(a)
             if a not in self:
                 self[a] = v
             elif isinstance(self[a], AttributeMapper) and type(v) == types.DictType:
