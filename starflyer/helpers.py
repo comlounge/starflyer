@@ -1,3 +1,4 @@
+import types
 
 # try to load the best simplejson implementation available.  If JSON
 # is not installed, we add a failing class.
@@ -89,6 +90,19 @@ class AttributeMapper(dict):
         """return a clone of this object"""
         d = copy.deepcopy(self) 
         return AttributeMapper(d)
+
+    def update(self, d):
+        """update the dictionary but make sure that existing included AttributeMappers are only updated aswell"""
+        for a,v in d.items():
+            print a,v, type(self), type(a)
+            if a not in self:
+                self[a] = v
+            elif isinstance(self[a], AttributeMapper) and type(v) == types.DictType:
+                self[a].update(v)
+            elif type(self[a]) == types.DictType and type(v) == types.DictType:
+                self[a].update(v)
+            else:
+                self[a] = v
 
 
 class URL(object):
