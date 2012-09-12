@@ -22,6 +22,7 @@ class StaticFileHandler(Handler):
         self.module = module
         self.config = app.config
         self.url_adapter = request.url_adapter
+        self.session = self.app.make_null_session()
 
     def __call__(self, **m):
         """simplified version of a call"""
