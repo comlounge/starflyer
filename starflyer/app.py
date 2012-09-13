@@ -59,6 +59,7 @@ class Application(object):
         'logger_name'                   : None,
         'server_name'                   : None,
         'application_root'              : None,
+        'preferred_url_scheme'          : "http",
         'propagate_exceptions'          : None, # this is used for testing and debugging and means to re-raise it and not use an error handler for uncaught exceptions
         'debug'                         : False,
         'testing'                       : False,
@@ -318,7 +319,7 @@ class Application(object):
         """
 
         # create the url adapter
-        urls = self.url_map.bind_to_environ(request.environ)
+        urls = self.create_url_adapter(request)
 
         try:
             url_rule, request.view_args = urls.match(return_rule=True)
@@ -566,6 +567,37 @@ class Application(object):
         path = path or self.config.get('session_cookie_path') or \
                self.config.get('application_root') or '/'
         response.delete_cookie(name, path)
+
+    ####
+    #### URL MANAGEMENT
+    ####
+
+    def create_url_adapter(self, request):
+        """Creates a URL adapter for the given request.  
+           This can now also be called without a request object when the
+           URL adapter is created for the application context.
+        """
+        if request is not None:
+            return self.url_map.bind_to_environ(request.environ)
+
+        # We need at the very least the server name to be set for this
+        # to work.
+        if self.config.server_name is not None:
+            return self.url_map.bind(
+                self.config.server_name,
+                script_name=self.config.application_root or '/',
+                url_scheme=self.config.preferred_url_scheme)
+    
+
+    def url_for(self, endpoint = None,  _full = False, _append=False, request = None, **kwargs):
+        """return a URL generated from the mapper"""
+        adapter = self.create_url_adapter(request)
+        return adapter.build(
+                endpoint, 
+                kwargs, 
+                force_external = _full, 
+                append_unknown = _append)
+
 
     ####
     #### WSGI runner for development
