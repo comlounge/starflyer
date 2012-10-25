@@ -1,7 +1,6 @@
 import exceptions
 import copy
 
-
 import static
 from .helpers import AttributeMapper, URL
 
