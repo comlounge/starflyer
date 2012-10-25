@@ -55,7 +55,6 @@ class Application(object):
         'session_cookie_path'           : None,
         'session_cookie_httponly'       : True,
         'session_cookie_secure'         : False,
-        'preferred_url_scheme'          : 'http',
         'logger_name'                   : None,
         'server_name'                   : None,
         'application_root'              : None,
