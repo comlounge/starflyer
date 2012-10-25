@@ -1,4 +1,4 @@
-from starflyer import Handler, Application, AttributeMapper, URL, redirect
+from starflyer import Handler, Application, AttributeMapper, URL, redirect, Module
 from starflyer import exceptions
 import werkzeug
 import starflyer
@@ -54,6 +54,10 @@ class TestHandler1(Handler):
     def after(self, response):
         # consume the remembered item and put it into headers
         response.headers['X-After'] = self.test_before
+
+        # this is for testing the modules defined below which set ``handler.foobar``
+        foobar = getattr(self, "foobar", "")
+        response.headers['X-Module'] = foobar
         return response
 
 class TestHandler2(Handler):
@@ -135,7 +139,78 @@ def pytest_funcarg__client(request):
     app = request.getfuncargvalue('app')
     return werkzeug.Client(app, werkzeug.BaseResponse)
 
+class TestModule1(Module):
+    """test module"""
+    name = "testmodule1"
+
+    defaults = {
+        'testvar' : 'foobar'
+    }
+
+    def before_handler(self, handler):
+        """set something on the handler for testing"""
+        print "before handler", handler
+        handler.foobar = self.config.testvar
+
+test_module = TestModule1(__name__)
+
+class ModuleTestApplication1(Application):
+    """app for testing the base module functionality"""
+
+    routes = [
+        URL("/",            "index",        TestHandler1),
+    ]
+
+    modules = [
+        test_module(),
+    ]
+
+    defaults = {
+        'template_folder'   : 'test_templates/',
+        'debug'             : False,
+    }
+
+test_module = TestModule1(__name__)
+class ModuleTestApplication2(ModuleTestApplication1):
+    """same as above but we change the config of the module"""
+
+    modules = [
+        test_module(testvar="barfooz"),
+    ]
+    def finalize_setup(self):
+        print "huhu?"
 
 
+test_module = TestModule1(__name__)
+class ModuleTestApplication3(ModuleTestApplication1):
+    """same as above but we configure the module dynamically"""
 
+    defaults = {
+        'testvar' : 't3',
+    }
 
+    modules = []
+
+    def finalize_modules(self):
+        self.modules.append(test_module(testvar = self.config.testvar))
+
+def pytest_funcarg__module_app1(request):
+    return ModuleTestApplication1(__name__)
+
+def pytest_funcarg__client_mod_app1(request):
+    app = request.getfuncargvalue('module_app1')
+    return werkzeug.Client(app, werkzeug.BaseResponse)
+
+def pytest_funcarg__module_app2(request):
+    return ModuleTestApplication2(__name__)
+
+def pytest_funcarg__client_mod_app2(request):
+    app = request.getfuncargvalue('module_app2')
+    return werkzeug.Client(app, werkzeug.BaseResponse)
+
+def pytest_funcarg__module_app3(request):
+    return ModuleTestApplication3(__name__)
+
+def pytest_funcarg__client_mod_app3(request):
+    app = request.getfuncargvalue('module_app3')
+    return werkzeug.Client(app, werkzeug.BaseResponse)

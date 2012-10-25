@@ -119,6 +119,8 @@ class Application(object):
                             endpoint='static',
                             handler=static.StaticFileHandler)
 
+        self.finalize_modules() # let user dynamically add some modules
+
         # now bind all the modules to our app and create a mapping 
         for module in self.modules:
             module.bind_to_app(self)
@@ -166,6 +168,10 @@ class Application(object):
     def finalize_setup(self):
         """a hook you can use to finalize the setup. You can add new routes, change configuration
         values etc.
+        """
+
+    def finalize_modules(self):
+        """a hook you can use to add modules to the modules list more dynamically and while using the app's config for it. Simply add them to the ``self.modules`` list via ``append()``.
         """
 
     ####
