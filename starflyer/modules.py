@@ -102,6 +102,15 @@ class Module(object):
             self.add_url_rule(sup+ '/<path:filename>',
                               endpoint='static',
                               handler=static.StaticFileHandler)
+
+        # now we update the module config by some config related sub section from the app's config 
+        # these need to be stored in the modules sub dictionary with the module names as keys.
+        # e.g. if you want to configure the mail module you'd set
+        # 'modules' : {'mail' : {'debug' : False}}
+        if app.config.has_key("modules"):
+            modcfg = app.config['modules']
+            self.config.update(modcfg.get(self.name, {}))
+
         self.finalize()
 
     def add_url_rule(self, url_or_path, endpoint = None, handler = None, **options):
