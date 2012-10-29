@@ -135,3 +135,28 @@ class URL(object):
         self.handler = handler
         self.options = options
 
+def fix_types(params, type_map):
+    """fixes parameters which might come in as string but need to be e.g. boolean
+
+    :param params: A dictionary with configuration parameters
+    :param type_map: A dictionary mapping parameter keys to types such as bool
+
+    If a key is not present in the type map then it will simply be passed as it is.
+
+    Right now this method supports ``bool`` and ``int``
+    
+    """
+
+    new_config = {}
+    for a,v in params.items():
+        if a not in type_map:
+            new_config[a] = v
+            continue
+        if type_map[a] == bool:
+            new_config[a] = v.lower()=="true"
+        elif type_map[a] == int:
+            new_config[a] = int(v)
+    return new_config
+
+
+    

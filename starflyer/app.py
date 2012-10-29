@@ -19,7 +19,7 @@ from werkzeug.test import Client, EnvironBuilder
 import sessions
 import static
 import exceptions
-from helpers import AttributeMapper, URL
+from helpers import AttributeMapper, URL, fix_types
 from templating import DispatchingJinjaLoader
 
 class Application(object):
@@ -66,6 +66,15 @@ class Application(object):
         'template_folder'               : "templates/",
         'static_folder'                 : "static/",
         'static_url_path'               : "/static",
+        'modules'                       : AttributeMapper(), # config placeholder for modules
+    }
+
+    # here you can define which types the config parameters are supposed to be in 
+    config_types = {
+        'debug' : bool,
+        'testing' : bool,
+        'session_cookie_httponly' : bool,
+        'session_cookie_secure' : bool,
     }
 
     jinja_options = ImmutableDict(
@@ -93,8 +102,8 @@ class Application(object):
         # initialize configuration
         self.config = AttributeMapper(self.enforced_defaults or {})
         self.config.update(self.defaults)
-        self.config.update(config)
-        self.config.update(kw)
+        self.config.update(fix_types(config, self.config_types))
+        self.config.update(fix_types(kw, self.config_types))
         # TODO: update from environment vars?
 
         # initialize the actual routes 
@@ -131,7 +140,7 @@ class Application(object):
 
         # for testing purposes. Set app.config.testing = True and this will be populated.
         self.last_handler = None
-    
+
     ####
     #### hooks for first request, finalizing and error handling
     ####
