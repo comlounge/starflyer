@@ -94,11 +94,32 @@ class AttributeMapper(dict):
     def update(self, d):
         """update the dictionary but make sure that existing included AttributeMappers are only updated aswell"""
         for a,v in d.items():
+            # test for sub dictionary updates like ``mail.module.debug``
+            if "." in a:
+                prefix, remainder = a.split(".", 1)
+
+                # if prefix is not in this main dict, then we simply ignore if for now. 
+                if prefix not in self:
+                    raise ValueError("WARNING: %s does not exist!" %(prefix))
+
+                # if it is in the existing dictionary, then we check if the value is an AttributeMapper as well
+                # only AttributeMappers will be recursively updated 
+                # TODO: Add some flag to convert dicts to AMs on the fly
+                if isinstance(self[prefix], AttributeMapper):
+                    self[prefix].update({remainder: v})
+                    continue
+                else:
+                    # we cannot update anything here as it's not a dict so we discard it
+                    # existing default config type always wins!
+                    raise ValueError("WARNING: tried to update %s but %s is not an AtttributeMapper!" %(prefix, self[prefix]))
+
             if a not in self:
                 self[a] = v
             elif isinstance(self[a], AttributeMapper) and type(v) == types.DictType:
+                # this might be recursive
                 self[a].update(v)
             elif type(self[a]) == types.DictType and type(v) == types.DictType:
+                # this ain't recursive as dictionaries don't updata that way
                 self[a].update(v)
             else:
                 self[a] = v
