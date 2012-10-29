@@ -584,7 +584,7 @@ class Application(object):
         """
         if request is not None:
             # adjust the scheme
-            request.environ['wsgi.url_scheme'] = request.environ.get('HTTP_X_URL_SCHEME', 'https') 
+            request.environ['wsgi.url_scheme'] = request.environ.get('HTTP_X_URL_SCHEME', 'http') 
             return self.url_map.bind_to_environ(request.environ)
 
         # We need at the very least the server name to be set for this
