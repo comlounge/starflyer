@@ -112,10 +112,7 @@ class Module(object):
         # 'modules' : {'mail' : {'debug' : False}}
         if app.config.has_key("modules"):
             modcfg = app.config['modules']
-            print modcfg
-            print self.config
             self.config.update(fix_types(modcfg.get(self.name, {}), self.config_types))
-            print self.config
 
         self.finalize()
 

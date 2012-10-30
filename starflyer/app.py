@@ -6,7 +6,6 @@ import os
 import sys
 
 import logbook
-import pprint
 import wrappers
 import werkzeug
 import werkzeug.test
@@ -110,12 +109,8 @@ class Application(object):
 
         # update configuration from our
         self.config.update(self.defaults)
-        print "init loop"
-        pprint.pprint(self.config)
         self.config.update(fix_types(config, self.config_types))
         self.config.update(fix_types(kw, self.config_types))
-        print "---"
-        pprint.pprint(self.config)
         # TODO: update from environment vars?
 
         # initialize the actual routes 
