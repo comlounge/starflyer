@@ -98,9 +98,16 @@ class Application(object):
         # initialize URL mapping variables
         self.url_map = werkzeug.routing.Map()
         self.handlers = {}
+
        
         # initialize configuration
         self.config = AttributeMapper(self.enforced_defaults or {})
+
+        # initialize module configuration
+        for module in self.modules:
+            self.config.modules.setdefault(module.name, AttributeMapper())
+
+        # update configuration from our
         self.config.update(self.defaults)
         self.config.update(fix_types(config, self.config_types))
         self.config.update(fix_types(kw, self.config_types))

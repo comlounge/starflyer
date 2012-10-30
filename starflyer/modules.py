@@ -2,7 +2,7 @@ import exceptions
 import copy
 
 import static
-from .helpers import AttributeMapper, URL
+from .helpers import AttributeMapper, URL, fix_types
 
 class Module(object):
     """a Module is used to extend an application via a third party python package."""
@@ -19,6 +19,9 @@ class Module(object):
         'static_folder'                 : None,
         'static_url_path'               : None,
     }
+
+    # here you can define which types the config parameters are supposed to be in 
+    config_types = {}
 
     def __init__(self, import_name, name = None, url_prefix = ""):
         """initialize the module
@@ -109,7 +112,7 @@ class Module(object):
         # 'modules' : {'mail' : {'debug' : False}}
         if app.config.has_key("modules"):
             modcfg = app.config['modules']
-            self.config.update(modcfg.get(self.name, {}))
+            self.config.update(fix_types(modcfg.get(self.name, {}), self.config_types))
 
         self.finalize()
 

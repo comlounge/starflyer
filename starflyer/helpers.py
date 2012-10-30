@@ -100,7 +100,7 @@ class AttributeMapper(dict):
 
                 # if prefix is not in this main dict, then we simply ignore if for now. 
                 if prefix not in self:
-                    raise ValueError("WARNING: %s does not exist!" %(prefix))
+                    raise ValueError("WARNING: %s does not exist! (from %s)" %(prefix,a))
 
                 # if it is in the existing dictionary, then we check if the value is an AttributeMapper as well
                 # only AttributeMappers will be recursively updated 
@@ -111,7 +111,7 @@ class AttributeMapper(dict):
                 else:
                     # we cannot update anything here as it's not a dict so we discard it
                     # existing default config type always wins!
-                    raise ValueError("WARNING: tried to update %s but %s is not an AtttributeMapper!" %(prefix, self[prefix]))
+                    raise ValueError("WARNING: tried to update %s but %s is not an AttributeMapper!" %(prefix, self[prefix]))
 
             if a not in self:
                 self[a] = v
