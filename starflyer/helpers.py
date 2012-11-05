@@ -153,7 +153,10 @@ def fix_types(params, type_map):
             new_config[a] = v
             continue
         if type_map[a] == bool:
-            new_config[a] = v.lower()=="true"
+            if type(v)==types.BooleanType:
+                new_config[a] = v
+            else:
+                new_config[a] = v.lower()=="true"
         elif type_map[a] == int:
             new_config[a] = int(v)
     return new_config
