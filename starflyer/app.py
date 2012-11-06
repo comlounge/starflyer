@@ -45,6 +45,9 @@ class Application(object):
     response_class = wrappers.Response
     request_class = wrappers.Request
 
+    # last handler for testing
+    last_handler = None
+
     # enforeced defaults (these have to be existent in the config
     # for starflyer to work (DO NOT CHANGE!)
     enforced_defaults = {
@@ -389,6 +392,8 @@ class Application(object):
             try:
                 # find the handler and call it
                 handler = self.find_handler(request)
+                if self.config.testing:
+                    self.last_handler = handler
 
                 # run the before_handler hooks from app and modules
                 if handler.use_hooks:
