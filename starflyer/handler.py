@@ -84,7 +84,7 @@ class Handler(object):
                 kind of string can be used as category.
         """
         flashes = self.session.get('_flashes', [])
-        flashes.append((category, msg))
+        flashes.append((category, unicode(msg)))
         self.session['_flashes'] = flashes
 
     def get_flashes(self, with_categories=False, category_filter=[]):
