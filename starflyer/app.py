@@ -115,6 +115,14 @@ class Application(object):
         self.config.update(fix_types(config, self.config_types))
         self.config.update(fix_types(kw, self.config_types))
         # TODO: update from environment vars?
+        
+        self.finalize_modules() # let user dynamically add some modules
+
+        # now bind all the modules to our app and create a mapping 
+        # we also make sure he that URLs of modules are registered first so their namespaces work correctly
+        for module in self.modules:
+            module.bind_to_app(self)
+            self.module_map[module.name] = module
 
         # initialize the actual routes 
         for route in self.routes:
@@ -123,9 +131,6 @@ class Application(object):
                 route.endpoint,
                 route.handler,
                 **route.options)
-
-        # we did not have any request yet
-        self._got_first_request = False
 
         # clean up static url path
         if self.config.static_folder is not None:
@@ -138,18 +143,15 @@ class Application(object):
                             endpoint='static',
                             handler=static.StaticFileHandler)
 
-        self.finalize_modules() # let user dynamically add some modules
-
-        # now bind all the modules to our app and create a mapping 
-        for module in self.modules:
-            module.bind_to_app(self)
-            self.module_map[module.name] = module
 
         # now call the hook for changing the setup after initialization
         self.finalize_setup()
 
         # for testing purposes. Set app.config.testing = True and this will be populated.
         self.last_handler = None
+
+        # we did not have any request yet
+        self._got_first_request = False
 
     ####
     #### hooks for first request, finalizing and error handling
@@ -592,7 +594,7 @@ class Application(object):
         """delete a cookie (secure or not) from the response"""
         path = path or self.config.get('session_cookie_path') or \
                self.config.get('application_root') or '/'
-        response.delete_cookie(name, path)
+        response.delete_cookie(name, path, domain = self.config.session_cookie_domain)
 
     ####
     #### URL MANAGEMENT
