@@ -17,7 +17,7 @@ from jinja2 import BaseLoader, Environment as BaseEnvironment, \
 
 class DispatchingJinjaLoader(BaseLoader):
     """A loader that looks for templates in the application and all
-    the blueprint folders.
+    the modules.
     """
 
     def __init__(self, app):
