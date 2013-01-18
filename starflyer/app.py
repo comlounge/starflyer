@@ -65,6 +65,7 @@ class Application(object):
         'propagate_exceptions'          : None, # this is used for testing and debugging and means to re-raise it and not use an error handler for uncaught exceptions
         'debug'                         : False,
         'testing'                       : False,
+        'forced_exceptions'             : False, # True = make also http exceptions raise and not return a response (for testing)
         'static_cache_timeout'          : 12 * 60 * 60,
         'template_folder'               : "templates/",
         'static_folder'                 : "static/",
@@ -394,8 +395,6 @@ class Application(object):
             try:
                 # find the handler and call it
                 handler = self.find_handler(request)
-                if self.config.testing:
-                    self.last_handler = handler
 
                 # run the before_handler hooks from app and modules
                 if handler.use_hooks:
@@ -485,9 +484,9 @@ class Application(object):
         """Handles an HTTP exception.  By default this will invoke the
         registered error handlers and fall back to returning the
         exception as response.
-
-        .. versionadded:: 0.3
         """
+        if self.config.force_exceptions:
+            raise
         if self.error_handlers and e.code in self.error_handlers:
             handler = self.error_handlers[e.code]
         else:
