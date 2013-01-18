@@ -65,7 +65,7 @@ class Application(object):
         'propagate_exceptions'          : None, # this is used for testing and debugging and means to re-raise it and not use an error handler for uncaught exceptions
         'debug'                         : False,
         'testing'                       : False,
-        'forced_exceptions'             : False, # True = make also http exceptions raise and not return a response (for testing)
+        'force_exceptions'              : False, # True = make also http exceptions raise and not return a response (for testing)
         'static_cache_timeout'          : 12 * 60 * 60,
         'template_folder'               : "templates/",
         'static_folder'                 : "static/",
