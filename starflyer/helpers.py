@@ -129,7 +129,13 @@ class URL(object):
     """proxy object for a URL rule in order to be used more easily in route listings"""
 
     def __init__(self, path, endpoint = None, handler = None, **options):
-        """initialize the route url basically with what we need for werkzeug routes"""
+        """initialize the route url basically with what we need for werkzeug routes
+
+        :param path: the rule string which is passed to the werkzeug Rule as first parameter
+        :param endpoint: the endpoint name under which a rule can be referenced again
+        :param handler: the starflyer ``Handler`` to be used for this rule
+        :param options: further options which are passed into the werkzeug ``Rule``
+        """
         self.path = path
         self.endpoint = endpoint
         self.handler = handler
