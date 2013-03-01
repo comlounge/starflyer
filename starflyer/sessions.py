@@ -231,6 +231,7 @@ class SecureCookieSessionInterface(SessionInterface):
             response.delete_cookie(app.config.session_cookie_name, path=path,
                                    domain=domain)
         else:
-            session.save_cookie(response, app.config.session_cookie_name, path=path,
+            if hasattr(response, "set_cookie"):
+                session.save_cookie(response, app.config.session_cookie_name, path=path,
                                 expires=expires, httponly=httponly,
                                 secure=secure, domain=domain)
