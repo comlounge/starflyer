@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+version = '2.0a'
 
 setup(name='starflyer',
       version=version,
@@ -20,8 +20,9 @@ setup(name='starflyer',
       install_requires=[
         "logbook",
         "werkzeug",
-        "routes",
+        "blinker",
         "Paste",
+        "PasteDeploy",
         "pyyaml",
         "argparse",
         "jinja2",

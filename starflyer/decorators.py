@@ -7,7 +7,7 @@ import functools
 import json
 import datetime
 
-__all__=['ashtml', 'asjson', 'render']
+__all__=['asjson', 'render']
 
 
 def jsonconverter(obj):
@@ -19,24 +19,6 @@ def jsonconverter(obj):
         # skip it otherwise
         return None
         raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
-
-
-class ashtml(object):
-    """takes a string output of a view and wraps it into a text/html response"""
-
-    def __init__(self, charset="utf-8"):
-        self.charset = charset
-
-    def __call__(self, method):
-
-        that = self 
-
-        @functools.wraps(method)
-        def wrapper(self, *args, **kwargs):
-            self.response.content_type = "text/html; charset=%s" %that.charset
-            self.response.data = method(self, *args, **kwargs)
-            self.response.set_cookie('m', self._encode_messages(self.messages_out))
-        return wrapper
 
 class render(object):
     """a decorator which takes a dictionary from the wrapped function
@@ -81,13 +63,14 @@ class asjson(object):
             self.headers["-".join(ps)] = v
     
     def __call__(self, method):
-        """takes a dict output of a handler method and returns it as JSON"""
+        """takes a dict output of a handler method and returns it as JSON wrapped in a Response"""
 
         that = self
     
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             data = method(self, *args, **kwargs)
+            response = self.app.response_class()
             if that.cls is not None:
                 s = json.dumps(data, default = jsonconverter)
             else:
@@ -95,13 +78,14 @@ class asjson(object):
             if self.request.args.has_key("callback"):
                 callback = self.request.args.get("callback")
                 s = "%s(%s)" %(callback, s)
-                self.response.data = s
-                self.response.content_type = "application/javascript"
+                response.data = s
+                response.content_type = "application/javascript"
             else:
-                self.response.data = s
-                self.response.content_type = "application/json"
+                response.data = s
+                response.content_type = "application/json"
             for a,v in that.headers.items():
-                self.response.headers[a] = v
+                response.headers[a] = v
+            return response
 
         return wrapper
 
