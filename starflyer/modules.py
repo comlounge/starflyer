@@ -1,5 +1,8 @@
 import exceptions
+import pkg_resources
 import copy
+import jinja2
+import os
 
 import static
 from .helpers import AttributeMapper, URL, fix_types
@@ -39,6 +42,12 @@ class Module(object):
         if self.name is None:
             raise exceptions.ConfigurationError("you need to configure a name for your module")
 
+        # set the jinja loader in case we have a "templates/" folder in the module directory
+        if self.jinja_loader is None:
+            print self.name
+            self.jinja_loader = jinja2.PrefixLoader({
+                self.name:     jinja2.PackageLoader(import_name, "templates/")
+            })
 
     ####
     #### configuration related hooks you can override

@@ -182,7 +182,12 @@ class Handler(object):
         params.update(self.app.get_render_context(self))
         params.update(self.render_context)
         params.update(kwargs)
-        tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)
+
+        # if we are called from a module, we try the module prefix for loading the template
+        if self.module is not None:
+            tmpl = self.app.jinja_env.get_or_select_template(self.module.name+"/"+tmplname, globals = self.template_globals)
+        else:
+            tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)
         return tmpl.render(**params)
 
     def __call__(self, **m):
