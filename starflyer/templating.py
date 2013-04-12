@@ -7,13 +7,13 @@
 
     Adapted from flask and extended with our own module approach.
 
-    :copyright: (c) 2011,2012 by Armin Ronacher, Christian Scholz.
+    :copyright: (c) 2011-2013 by Armin Ronacher, Christian Scholz.
     :license: BSD, see LICENSE for more details.
 """
 
 from jinja2 import BaseLoader, Environment as BaseEnvironment, \
      TemplateNotFound
-
+import os
 
 class DispatchingJinjaLoader(BaseLoader):
     """A loader that looks for templates in the application and all
@@ -33,23 +33,24 @@ class DispatchingJinjaLoader(BaseLoader):
         raise TemplateNotFound(template)
 
     def _iter_loaders(self, template):
-        
-        # check if we are in the module namespace
-        # thus we check the module first
-        if template.startswith("_m"):
-            parts = template.split("/")
-            module_name = parts[1].lower()
-            module = self.app.module_map[module_name]
-            if module.module_jinja_loader is not None:
-                yield module.module_jinja_loader, "/".join(parts[2:])
+        """iterate over all the loaders, both from application and from modules.
 
-        # no namespace thus we check the app's loader first
+        Application loaders will always have precedence and can also override module templates. 
+        """
+        
+        # first check the application loader
         loader = self.app.jinja_loader
         if loader is not None:
             yield loader, template
 
-        # in case nothing was found in the app, lets get back to modules
-        for module in self.app.modules:
+        # now that we didn't find it in there lets go over all the module related ones
+        # but only if they are prefixed with _m
+      
+        if template.startswith("_m"):
+            path = template.split("/")
+            dummy, module_name = path[:2]
+            template = os.path.join(*path[2:])
+            module = self.app.module_map[module_name]
             if module.jinja_loader is not None:
                 yield module.jinja_loader, template
 

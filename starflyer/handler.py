@@ -185,7 +185,9 @@ class Handler(object):
 
         # if we are called from a module, we try the module prefix for loading the template
         if self.module is not None:
-            tmpl = self.app.jinja_env.get_or_select_template(self.module.name+"/"+tmplname, globals = self.template_globals)
+            # construct relative path which also allows for .. and /
+            path = os.path.normpath(os.path.join("_m", self.module.name, tmplname))
+            tmpl = self.app.jinja_env.get_or_select_template(path, globals = self.template_globals)
         else:
             tmpl = self.app.jinja_env.get_or_select_template(tmplname, globals = self.template_globals)
         return tmpl.render(**params)

@@ -43,11 +43,10 @@ class Module(object):
             raise exceptions.ConfigurationError("you need to configure a name for your module")
 
         # set the jinja loader in case we have a "templates/" folder in the module directory
+        # this will make the path to the module templates be "_m/<module_name>/<template_name>"
+        # and can be easily replaced in your application
         if self.jinja_loader is None:
-            print self.name
-            self.jinja_loader = jinja2.PrefixLoader({
-                self.name:     jinja2.PackageLoader(import_name, "templates/")
-            })
+            self.jinja_loader = jinja2.PackageLoader(import_name, "templates/")
 
     ####
     #### configuration related hooks you can override
