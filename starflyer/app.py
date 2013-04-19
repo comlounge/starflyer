@@ -161,7 +161,16 @@ class Application(object):
             print "of that we cannot create proper URLs."
             print "We will now use localhost as server name but this might create broken URLs."
             print "*"*80
+            print
             self.config.server_name = "localhost" 
+
+        if self.config.session_cookie_domain is None:
+            print "*"*80
+            print "WARNING: session_cookie_domain is not set in your configuration"
+            print "this means that depending on the browser, the session cookie"
+            print "can not be stored. This also means that no flash messages will appear"
+            print "*"*80
+            print
 
 
     ####
