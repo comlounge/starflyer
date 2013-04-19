@@ -82,7 +82,7 @@ class Application(object):
     }
 
     jinja_options = ImmutableDict(
-        extensions=['jinja2.ext.autoescape', 'jinja2.ext.with_']
+        extensions=['jinja2.ext.autoescape', 'jinja2.ext.with_', 'jinja2.ext.i18n']
     )
     
     jinja_filters = ImmutableDict()
