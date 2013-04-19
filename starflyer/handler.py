@@ -144,13 +144,17 @@ class Handler(object):
 
     @property
     def default_render_context(self):
-        """return the default template rendering environment"""
+        """return the default template rendering environment. This is the starting point
+        and any additional property or method like ``render_context`` will update this
+        dictionary. 
+        """
         return dict(
             handler = self,
             request = self.request,
             session = self.session,
             config = self.config,
             get_flashes = self.get_flashes,
+            gettext = lambda x: x                   # dummy i18n handler for jinja2
         )
 
     @property
