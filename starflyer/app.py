@@ -400,7 +400,8 @@ class Application(object):
         # helper for injecting data into the log record
         def inject(record):
             """the injection callback for any log record"""
-            record.extra['handler'] = str(handler_cls)
+            print record.extra
+            record.extra['handler'] = str(handler.__class__)
             record.extra['url'] = request.url
             record.extra['method'] = request.method
             record.extra['ip'] = request.remote_addr
@@ -409,43 +410,43 @@ class Application(object):
             
             
         # use the log context to actually call the handler
-        handler = None
-        with logbook.Processor(inject):
-            try:
-                # find the handler and call it
-                handler = self.find_handler(request)
+        handler = self.find_handler(request)
+        with self.setup_logger():
+            with logbook.Processor(inject):
+                try:
+                    # find the handler 
 
-                # run the before_handler hooks from app and modules
-                if handler.use_hooks:
-                    for module in self.modules:
-                        rv = module.before_handler(handler)
+                    # run the before_handler hooks from app and modules
+                    if handler.use_hooks:
+                        for module in self.modules:
+                            rv = module.before_handler(handler)
+                            if rv is not None:
+                                return rv
+                        rv = self.before_handler(handler)
                         if rv is not None:
                             return rv
-                    rv = self.before_handler(handler)
-                    if rv is not None:
-                        return rv
 
-                # in case we are in testing mode remember the last used handler
-                if self.config.testing:
-                    self.last_handler = handler
+                    # in case we are in testing mode remember the last used handler
+                    if self.config.testing:
+                        self.last_handler = handler
 
-                # call the handler and receive the response
-                response = handler(**request.view_args)
-                if handler.use_hooks:
-                    for module in self.modules:
-                        rv = module.after_handler(handler, response) # hook for post processing a resposne
+                    # call the handler and receive the response
+                    response = handler(**request.view_args)
+                    if handler.use_hooks:
+                        for module in self.modules:
+                            rv = module.after_handler(handler, response) # hook for post processing a resposne
+                            if rv is not None:
+                                return rv
+                        rv = self.after_handler(handler, response) # hook for post processing a resposne
                         if rv is not None:
                             return rv
-                    rv = self.after_handler(handler, response) # hook for post processing a resposne
-                    if rv is not None:
-                        return rv
 
-            except Exception, e:
-                response = self.handle_user_exception(request, e)
+                except Exception, e:
+                    response = self.handle_user_exception(request, e)
 
-            # now save the session after the after handlers might have changed it
-            if handler and not self.session_interface.is_null_session(handler.session):
-                self.save_session(handler.session, response)
+                # now save the session after the after handlers might have changed it
+                if handler and not self.session_interface.is_null_session(handler.session):
+                    self.save_session(handler.session, response)
 
         return self.finalize_response(response) # hook for post processing a resposne
 
@@ -465,12 +466,21 @@ class Application(object):
 
     def setup_logger(self):
         """override this method to define your own log handlers. Usually it
-        will return a ``NestedSetup`` object to be used
+        will return a ``NestedSetup`` object to be used. 
+
+        per default we log to stdout
         """
-        handler = logbook.FileHandler(self.config.log_filename, bubble=True)
-        return logbook.NestedSetup([
-            handler,
-        ])
+        format_string = '{record.channel} : {record.message} (in {record.filename}:{record.lineno}), args: {record.kwargs})'
+        handler = logbook.StreamHandler(sys.stdout, format_string = format_string, bubble=False)
+
+        # another example:
+        #handler = logbook.FileHandler(self.config.log_filename, bubble=True)
+        #return logbook.NestedSetup([
+            #handler,
+        #])
+
+        # our default formatting
+        return handler
 
 
     ####
