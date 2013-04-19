@@ -154,6 +154,16 @@ class Application(object):
         # we did not have any request yet
         self._got_first_request = False
 
+        # check config
+        if self.config.server_name is None:
+            print "*"*80
+            print "WARNING: you don't have a server_name set in your configuration and because"
+            print "of that we cannot create proper URLs."
+            print "We will now use localhost as server name but this might create broken URLs."
+            print "*"*80
+            self.config.server_name = "localhost" 
+
+
     ####
     #### hooks for first request, finalizing and error handling
     ####
