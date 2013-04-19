@@ -119,7 +119,18 @@ class Handler(object):
             return [x[1] for x in flashes]
         return flashes
 
+    ####
+    #### i18n MANAGEMENT
+    ####
     
+    def _(self, s, **kw):
+        """dummy method for "translating" messages by simply passing them through. This is usally
+        replaced on the fly by modules such as ``sf-babel``.
+
+        :param s: string to translate
+        """
+        return s
+
     ####
     #### URL MANAGEMENT
     ####
