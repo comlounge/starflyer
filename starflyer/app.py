@@ -394,6 +394,8 @@ class Application(object):
         this will be handled as well
         """
 
+        handler = None
+
         # check if we are the first request ever for this application
         self.check_first_request(request)
 
