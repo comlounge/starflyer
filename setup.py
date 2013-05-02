@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '2.0b'
+version = '2.0b1'
 
 setup(name='starflyer',
       version=version,
