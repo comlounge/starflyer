@@ -71,7 +71,7 @@ class asjson(object):
         def wrapper(self, *args, **kwargs):
             data = method(self, *args, **kwargs)
             response = self.app.response_class()
-            if that.cls is not None:
+            if that.cls is None:
                 s = json.dumps(data, default = jsonconverter)
             else:
                 s = json.dumps(data, cls = that.cls)
