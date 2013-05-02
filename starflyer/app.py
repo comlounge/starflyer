@@ -400,21 +400,18 @@ class Application(object):
         # helper for injecting data into the log record
         def inject(record):
             """the injection callback for any log record"""
-            print record.extra
-            record.extra['handler'] = str(handler.__class__)
             record.extra['url'] = request.url
             record.extra['method'] = request.method
             record.extra['ip'] = request.remote_addr
             record.hid = id(request)
             # TODO: add a hook for adding more information
             
-            
         # use the log context to actually call the handler
-        handler = self.find_handler(request)
         with self.setup_logger():
             with logbook.Processor(inject):
                 try:
                     # find the handler 
+                    handler = self.find_handler(request)
 
                     # run the before_handler hooks from app and modules
                     if handler.use_hooks:
