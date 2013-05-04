@@ -151,6 +151,8 @@ class Handler(object):
             session = self.session,
             config = self.config,
             get_flashes = self.get_flashes,
+            url_for = self.url_for,
+            M = self.app.module_map
         )
 
     @property
