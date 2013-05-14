@@ -1,6 +1,7 @@
 import exceptions
 import pkg_resources
 import copy
+import urlparse
 import jinja2
 import os
 
@@ -108,8 +109,8 @@ class Module(object):
             sup = self.config.static_url_path
             if sup.endswith("/"):
                 sup = sup[:-1]  # remove any trailing slash
-            if not sup.startswith("/"):
-                sup = "/"+sup   # add a leading slash if missing
+            if sup.startswith("/"):
+                sup = sup[1:] # remove leading slashes so that urljoin later works correctly
             self.add_url_rule(sup+ '/<path:filename>',
                               endpoint='static',
                               handler=static.StaticFileHandler)
@@ -135,7 +136,7 @@ class Module(object):
             path = url_or_path
         ns = self.name.strip().lower()+"."
         self.app.add_url_rule(
-            self.url_prefix + path,
+            urlparse.urljoin(self.url_prefix,path),
             ns + endpoint,
             handler,
             **options)
@@ -152,6 +153,8 @@ class Module(object):
             self.url_prefix = url_prefix
         else:
             self.url_prefix = "/"+self.name
+        if not self.url_prefix.endswith("/"):
+            self.url_prefix = self.url_prefix + "/"
         self.config = AttributeMapper(self.enforced_defaults or {})
         self.config.update(self.defaults)
         self.config.update(config)
