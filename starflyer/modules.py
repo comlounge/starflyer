@@ -135,6 +135,8 @@ class Module(object):
         else:
             path = url_or_path
         ns = self.name.strip().lower()+"."
+        if path.startswith("/"):
+            path = path[1:]
         self.app.add_url_rule(
             urlparse.urljoin(self.url_prefix,path),
             ns + endpoint,
