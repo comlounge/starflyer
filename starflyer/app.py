@@ -155,7 +155,7 @@ class Application(object):
         self._got_first_request = False
 
         # check config
-        if self.config.server_name is None:
+        if self.config.server_name is None and not self.config.testing:
             print "*"*80
             print "WARNING: you don't have a server_name set in your configuration and because"
             print "of that we cannot create proper URLs."
@@ -164,7 +164,7 @@ class Application(object):
             print
             self.config.server_name = "localhost" 
 
-        if self.config.session_cookie_domain is None:
+        if self.config.session_cookie_domain is None and not self.config.testing:
             print "*"*80
             print "WARNING: session_cookie_domain is not set in your configuration"
             print "this means that depending on the browser, the session cookie"

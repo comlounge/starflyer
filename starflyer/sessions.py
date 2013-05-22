@@ -215,7 +215,7 @@ class SecureCookieSessionInterface(SessionInterface):
 
     def open_session(self, app, request):
         key = app.config.get('secret_key', None)
-        if key is not None:
+        if key is not None or app.config.testing:
             session = self.session_class.load_cookie(request,
                                                   app.config.session_cookie_name,
                                                   secret_key=key)
