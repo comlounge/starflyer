@@ -220,8 +220,11 @@ class SecureCookieSessionInterface(SessionInterface):
                                                   app.config.session_cookie_name,
                                                   secret_key=key)
             return session
+        else:
+            print "*** CANNOT OPEN SESSION BECAUSE SECRET KEY IS MISSING IN THE CONFIGURATION"
 
     def save_session(self, app, session, response):
+        """save a session"""
         expires = self.get_expiration_time(app, session)
         domain = self.get_cookie_domain(app)
         path = self.get_cookie_path(app)
