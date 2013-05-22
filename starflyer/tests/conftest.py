@@ -112,8 +112,10 @@ class TestApplication(Application):
     ]
 
     defaults = {
-        'template_folder'   : 'test_templates/',
-        'debug'             : False,
+        'template_folder'       : 'test_templates/',
+        'debug'                 : False,
+        'session_cookie_domain' : '',
+        'server_name'           : '',
     }
 
     first_counter = 0
@@ -149,7 +151,6 @@ class TestModule1(Module):
 
     def before_handler(self, handler):
         """set something on the handler for testing"""
-        print "before handler", handler
         handler.foobar = self.config.testvar
 
 test_module = TestModule1(__name__)
