@@ -2,6 +2,7 @@ from starflyer import Handler, Application, AttributeMapper, URL, redirect, Modu
 from starflyer import exceptions
 import werkzeug
 import starflyer
+import pytest
 
 class MyErrorHandler(Handler):
     
@@ -214,4 +215,42 @@ def pytest_funcarg__module_app3(request):
 
 def pytest_funcarg__client_mod_app3(request):
     app = request.getfuncargvalue('module_app3')
+    return werkzeug.Client(app, werkzeug.BaseResponse)
+
+@pytest.fixture
+def module_test_client1(request):
+    """provides an app with a module for testing module templates and overrides"""
+    from mods.testmodule import testmodule1
+
+    class App(Application):
+        """same as above but we configure the module dynamically"""
+
+        defaults = {
+            'testing' : True,
+        }
+
+        modules = [
+            testmodule1()
+        ]
+    app = App(__name__)
+    return werkzeug.Client(app, werkzeug.BaseResponse)
+
+
+@pytest.fixture
+def module_test_client2(request):
+    """provides an app with a module for testing module templates and overrides.
+    this uses a different template folder"""
+    from mods.testmodule import testmodule2
+
+    class App(Application):
+        """same as above but we configure the module dynamically"""
+
+        defaults = {
+            'testing' : True,
+        }
+
+        modules = [
+            testmodule2()
+        ]
+    app = App(__name__)
     return werkzeug.Client(app, werkzeug.BaseResponse)

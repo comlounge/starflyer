@@ -19,7 +19,7 @@ class Module(object):
 
     # some defaults we always need (like in apps)
     enforced_defaults = {
-        'template_folder'               : None,
+        'template_folder'               : "templates",
         'static_folder'                 : None,
         'static_url_path'               : None,
     }
@@ -42,12 +42,6 @@ class Module(object):
             self.name = name
         if self.name is None:
             raise exceptions.ConfigurationError("you need to configure a name for your module")
-
-        # set the jinja loader in case we have a "templates/" folder in the module directory
-        # this will make the path to the module templates be "_m/<module_name>/<template_name>"
-        # and can be easily replaced in your application
-        if self.jinja_loader is None:
-            self.jinja_loader = jinja2.PackageLoader(import_name, "templates/")
 
     ####
     #### configuration related hooks you can override
@@ -114,6 +108,11 @@ class Module(object):
             self.add_url_rule(sup+ '/<path:filename>',
                               endpoint='static',
                               handler=static.StaticFileHandler)
+
+        # now set the template loader
+        if self.jinja_loader is None:
+            self.jinja_loader = jinja2.PackageLoader(self.import_name, self.config.template_folder)
+
 
         # now we update the module config by some config related sub section from the app's config 
         # these need to be stored in the modules sub dictionary with the module names as keys.
