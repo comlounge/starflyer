@@ -20,8 +20,8 @@ class Module(object):
     # some defaults we always need (like in apps)
     enforced_defaults = {
         'template_folder'               : "templates",
-        'static_folder'                 : None,
-        'static_url_path'               : None,
+        'static_folder'                 : "static",
+        'static_url_path'               : "/static",
     }
 
     # here you can define which types the config parameters are supposed to be in 
@@ -98,16 +98,22 @@ class Module(object):
                 route.handler,
                 **route.options)
 
-        # add static files
+        # add static files. We automatically use any static/ folder and map it to the "/<modulename>/static/" url path
+        # but all of this can be overridden 
         if self.config.static_folder is not None:
-            sup = self.config.static_url_path
-            if sup.endswith("/"):
-                sup = sup[:-1]  # remove any trailing slash
-            if sup.startswith("/"):
-                sup = sup[1:] # remove leading slashes so that urljoin later works correctly
-            self.add_url_rule(sup+ '/<path:filename>',
-                              endpoint='static',
-                              handler=static.StaticFileHandler)
+            path = self.config.static_folder
+            fullpath = pkg_resources.resource_filename(self.import_name, path)
+
+            # only add the static routes if the folder exists
+            if os.path.exists(fullpath):
+                sup = self.config.static_url_path
+                if sup.endswith("/"):
+                    sup = sup[:-1]  # remove any trailing slash
+                if sup.startswith("/"):
+                    sup = sup[1:] # remove leading slashes so that urljoin later works correctly
+                self.add_url_rule(sup+ '/<path:filename>',
+                                  endpoint='static',
+                                  handler=static.StaticFileHandler)
 
         # now set the template loader
         if self.jinja_loader is None:

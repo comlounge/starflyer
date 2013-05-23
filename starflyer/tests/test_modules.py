@@ -21,3 +21,11 @@ def test_module_template_with_override(module_test_client1):
 def test_module_with_different_template_folder(module_test_client2):
     resp = module_test_client2.get('/test/')
     assert resp.data == "other template folder"
+
+def test_static_files(module_test_client1):
+    resp = module_test_client1.get('/test/static/moduletest.txt')
+    assert resp.data.strip() == "module static file"
+
+def test_static_files_with_different_folder_and_url_path(module_test_client2):
+    resp = module_test_client2.get('/test/newstatic/moduletest.txt')
+    assert resp.data.strip() == "new module static file"

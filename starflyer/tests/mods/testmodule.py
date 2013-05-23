@@ -28,7 +28,9 @@ class TestModule2(Module):
 
     name = "test"
     defaults = {
-        'template_folder' : 'templates2',
+        'template_folder'   : 'templates2',
+        'static_folder'     : 'static2',
+        'static_url_path'   : 'newstatic',
     }
 
     routes = [
