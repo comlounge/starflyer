@@ -397,7 +397,6 @@ class Application(object):
         returns an instance of :class:`~starflyer.Response`. In case of an exception
         this will be handled as well
         """
-
         handler = None
 
         # check if we are the first request ever for this application
