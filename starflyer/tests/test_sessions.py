@@ -68,11 +68,22 @@ def test_session_config(client):
     assert 'secure' in cookie
     assert 'httponly' not in cookie
 
-def test_basic_flashing(client):
+def test_basic_flashing(client, app):
     """test a session expiration"""
-    client.application.config.secret_key = "foobar"
+    app.config.secret_key = "foobar"
     resp = client.get("/flash?flash=hello")
     resp = client.get("/flash")
     assert resp.data == "[u'hello']" 
 
     # TODO: more flash testing with filters and categories
+
+def test_multiple_handlers_and_flashing(client, app):
+    """test what happens if we call a handler multiple times"""
+    app.config.secret_key = "foobar"
+    resp = client.get("/flash?flash=hello")
+    assert app.last_handler.get_flashes()[0] == "hello"
+    resp = client.get("/flash")
+    assert len(app.last_handler.get_flashes()) == 0
+    assert resp.data == "[u'hello']" 
+
+
