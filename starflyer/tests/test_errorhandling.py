@@ -37,10 +37,8 @@ def test_error_handler(client):
 
 # TODO: We need some test for some error handlers and some example
 
-# TODO: This uses an AssertionError internally which fails as it's also patched by pytest
-@pytest.mark.xfail()
 def test_strict_slashes_in_debug(client):
-    client.application.config.debug = True
+    client.application.config.debug = False
     client.application.config.testing = False # somewhat more real here
     resp = client.post("/branch")
     assert resp.status_code == 301
