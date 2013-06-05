@@ -115,6 +115,7 @@ class TestApplication(Application):
     defaults = {
         'template_folder'       : 'test_templates/',
         'debug'                 : False,
+        'testing'               : True,
         'session_cookie_domain' : '',
         'server_name'           : '',
     }
@@ -135,6 +136,7 @@ def pytest_funcarg__app(request):
 
 def pytest_funcarg__session_handler(request):
     app = request.getfuncargvalue('app')
+    app.config.testing = False
     request = starflyer.Request({})
     return SessionHandler(app, request)
     
@@ -170,6 +172,7 @@ class ModuleTestApplication1(Application):
     defaults = {
         'template_folder'   : 'test_templates/',
         'debug'             : False,
+        'testing'           : True,
     }
 
 test_module = TestModule1(__name__)
