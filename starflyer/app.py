@@ -172,6 +172,10 @@ class Application(object):
             print "*"*80
             print
 
+        if self.config.testing:
+            self.config.server_name = ''
+            self.config.session_cookie_domain = ''
+
 
     ####
     #### hooks for first request, finalizing and error handling
