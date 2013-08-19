@@ -163,6 +163,7 @@ class Handler(object):
             handler = self,
             request = self.request,
             session = self.session,
+            url_for = self.url_for,
             config = self.config,
             get_flashes = self.get_flashes,
             gettext = lambda x: x                   # dummy i18n handler for jinja2

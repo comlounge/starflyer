@@ -4,6 +4,7 @@ import copy
 import urlparse
 import jinja2
 import os
+import copy
 
 import static
 from .helpers import AttributeMapper, URL, fix_types
@@ -156,6 +157,8 @@ class Module(object):
         :param config: configuration parameters which will be available in the ``config`` instance variable of the module
         :param kw: additional keyword arguments to configure it (override everything else)
         """
+
+        self = copy.copy(self) # return a copy of this module
         if url_prefix is not None:
             self.url_prefix = url_prefix
         else:
@@ -163,7 +166,7 @@ class Module(object):
         if not self.url_prefix.endswith("/"):
             self.url_prefix = self.url_prefix + "/"
         self.config = AttributeMapper(self.enforced_defaults or {})
-        self.config.update(self.defaults)
+        self.config.update(copy.deepcopy(self.defaults))
         self.config.update(config)
         self.config.update(kw)
         return self

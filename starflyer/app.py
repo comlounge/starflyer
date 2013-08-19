@@ -188,6 +188,10 @@ class Application(object):
             print "*"*80
             print
 
+        if self.config.testing:
+            self.config.server_name = ''
+            self.config.session_cookie_domain = ''
+
 
     ####
     #### hooks for first request, finalizing and error handling
@@ -409,7 +413,6 @@ class Application(object):
         returns an instance of :class:`~starflyer.Response`. In case of an exception
         this will be handled as well
         """
-
         handler = None
 
         # check if we are the first request ever for this application
