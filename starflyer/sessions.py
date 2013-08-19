@@ -216,18 +216,15 @@ class SecureCookieSessionInterface(SessionInterface):
     def open_session(self, app, request):
         key = app.config.get('secret_key', None)
         if key is not None or app.config.testing:
-            print "loading session",
             session = self.session_class.load_cookie(request,
                                                   app.config.session_cookie_name,
                                                   secret_key=key)
-            print session
             return session
         else:
             print "*** CANNOT OPEN SESSION BECAUSE SECRET KEY IS MISSING IN THE CONFIGURATION"
 
     def save_session(self, app, session, response):
         """save a session"""
-        print "saving session", session
         expires = self.get_expiration_time(app, session)
         domain = self.get_cookie_domain(app)
         path = self.get_cookie_path(app)
