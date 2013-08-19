@@ -3,6 +3,7 @@ from starflyer import exceptions
 import werkzeug
 import starflyer
 import pytest
+import pkg_resources
 
 class MyErrorHandler(Handler):
     
@@ -252,5 +253,7 @@ def module_test_client2(request):
         modules = [
             testmodule2()
         ]
-    app = App(__name__)
+    fn = pkg_resources.resource_filename(__name__, 'testconfig.ini')
+    app = App(__name__, {'module_config_file' : fn})
     return werkzeug.Client(app, werkzeug.BaseResponse)
+

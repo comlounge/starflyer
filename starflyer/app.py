@@ -21,6 +21,7 @@ import static
 import exceptions
 from helpers import AttributeMapper, URL, fix_types
 from templating import DispatchingJinjaLoader
+from ConfigParser import ConfigParser
 
 class Application(object):
     """a base class for dispatching WSGI requests"""
@@ -107,13 +108,28 @@ class Application(object):
         # initialize configuration
         self.config = AttributeMapper(self.enforced_defaults or {})
 
+
         # initialize module configuration
         for module in self.modules:
             self.config.modules.setdefault(module.name, AttributeMapper())
 
         # update configuration from our
         self.config.update(self.defaults)
+
+        # first read module configuration from a file if given
+        if "module_config_file" in config:
+            print "FOUND"
+            cfg = ConfigParser()
+            cfg.read(config['module_config_file'])
+            for section in cfg.sections():
+                for option in cfg.options(section):
+                    print section, option, cfg.get(section, option)
+                    config["modules.%s.%s" %(section,option)] = cfg.get(section, option)
+
+        # now override defaults from config eventually
         self.config.update(fix_types(config, self.config_types))
+        
+        # lastly override via keyword arguments
         self.config.update(fix_types(kw, self.config_types))
         # TODO: update from environment vars?
         
@@ -605,8 +621,9 @@ class Application(object):
             secret_key = self.config.get('secret_key', None)
         return SecureCookie.load_cookie(request, name, secret_key = secret_key)
 
-    def set_cookie(self, response, name, data, path = None, expires = None, secret_key = None, max_age = None,
-                    secure = False, httponly = True, force = True):
+    def set_cookie(self, response, name, data, path = None, 
+                   expires = None, secret_key = None, max_age = None,
+                   secure = False, httponly = True, force = True):
         """store data under the named cookie as a securecookie in the response"""
         if secret_key is None:
             secret_key = self.config.get('secret_key', None)

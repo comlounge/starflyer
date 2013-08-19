@@ -29,3 +29,13 @@ def test_static_files(module_test_client1):
 def test_static_files_with_different_folder_and_url_path(module_test_client2):
     resp = module_test_client2.get('/test/newstatic/moduletest.txt')
     assert resp.data.strip() == "new module static file"
+
+def test_module_config_defaults(module_test_client1):
+    resp = module_test_client1.get('/test/config')
+    assert resp.data.strip() == "foo"
+
+def test_module_config_external(module_test_client2):
+    resp = module_test_client2.get('/test/config')
+    assert resp.data.strip() == "bar"
+
+
