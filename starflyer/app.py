@@ -118,12 +118,10 @@ class Application(object):
 
         # first read module configuration from a file if given
         if "module_config_file" in config:
-            print "FOUND"
             cfg = ConfigParser()
             cfg.read(config['module_config_file'])
             for section in cfg.sections():
                 for option in cfg.options(section):
-                    print section, option, cfg.get(section, option)
                     config["modules.%s.%s" %(section,option)] = cfg.get(section, option)
 
         # now override defaults from config eventually
@@ -189,8 +187,8 @@ class Application(object):
             print
 
         if self.config.testing:
-            self.config.server_name = ''
-            self.config.session_cookie_domain = ''
+            self.config.server_name = 'example.org'
+            self.config.session_cookie_domain = 'example.org'
 
 
     ####
@@ -734,7 +732,7 @@ class Application(object):
     #### TESTING SUPPORT
     ####
 
-    def test_client(self, use_cookies=True):
+    def test_client(self, use_cookies = True):
         """Creates a test client for this application.  For information
         about unit testing head over to :ref:`testing`.
 
@@ -753,7 +751,24 @@ class Application(object):
         cls = self.test_client_class
         if cls is None:
             cls = Client
-        return cls(self, self.response_class, use_cookies=use_cookies)
+        client =  cls(self, self.response_class, use_cookies = use_cookies)
+
+        # custom cookie policy for testing which allows all cookies
+        # domains might otherwise be a problem I found out.
+        # also werkzeug does not seem to handle this properly (but I might
+        # be wrong)
+
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from werkzeug.test import _TestCookieJar
+        class TestCookiePolicy(DefaultCookiePolicy):
+                
+            def set_ok(self, cookie, request):
+                return True
+
+        # override the already set cookie jar
+        client.cookie_jar = _TestCookieJar(policy = TestCookiePolicy())
+        return client
+
     
     def make_request(self, **options):
         """create a request based on the given options. Those options are the same
