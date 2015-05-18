@@ -5,6 +5,7 @@ import time
 import pkg_resources
 
 from werkzeug.datastructures import Headers
+import werkzeug.exceptions
 
 try:
     from werkzeug.wsgi import wrap_file
@@ -36,10 +37,16 @@ class StaticFileHandler(Handler):
     def get(self, filename=None):
         """return a static file"""
         if self.module is not None:
-            fp = pkg_resources.resource_stream(self.module.import_name, os.path.join(self.module.config.static_folder, filename))
+            try:
+                fp = pkg_resources.resource_stream(self.module.import_name, os.path.join(self.module.config.static_folder, filename))
+            except IOError:
+                raise werkzeug.exceptions.NotFound()
             config = self.module.config
         else:
-            fp = pkg_resources.resource_stream(self.app.import_name, os.path.join(self.app.config.static_folder, filename))
+            try:
+                fp = pkg_resources.resource_stream(self.app.import_name, os.path.join(self.app.config.static_folder, filename))
+            except IOError:
+                raise werkzeug.exceptions.NotFound()
             config = self.app.config
         
         mimetype = mimetypes.guess_type(filename)[0]
