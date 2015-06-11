@@ -72,7 +72,7 @@ class Handler(object):
     #### FLASH MANAGING
     ####
 
-    def flash(self, msg, category="message"):
+    def flash(self, msg, category="info"):
         """add a new flash message
 
             (copied nearly verbatim from flask) 
