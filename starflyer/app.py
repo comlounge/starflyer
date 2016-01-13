@@ -472,6 +472,8 @@ class Application(object):
         spi = int(self.config.get("shift_path_info", 0))
         for i in range(0,spi):
             shift_path_info(environ)
+        if self.config.server_name:
+            environ['HTTP_HOST'] = self.config.server_name
         request = self.request_class(environ)
         try:
             response = self.process_request(request)
@@ -653,7 +655,21 @@ class Application(object):
         if request is not None:
             # adjust the scheme
             request.environ['wsgi.url_scheme'] = request.environ.get('HTTP_X_URL_SCHEME', 'http') 
-            return self.url_map.bind_to_environ(request.environ)
+            return self.url_map.bind(
+               self.config.server_name, 
+                script_name = request.environ.get('SCRIPT_NAME'),
+                url_scheme=self.config.preferred_url_scheme,
+                default_method = request.environ['REQUEST_METHOD'],
+                path_info = request.environ['PATH_INFO'],
+                query_args = request.environ['QUERY_STRING']
+            )
+            if self.config.server_name:
+                import copy
+                e = copy.copy(request.environ)
+                e['SERVER_NAME'] = e['HTTP_HOST'] = self.config.server_name
+                return self.url_map.bind_to_environ(e, server_name = self.config.server_name)
+            ua = self.url_map.bind_to_environ(request.environ)
+            return ua
 
         # We need at the very least the server name to be set for this
         # to work.
